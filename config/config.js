@@ -1,5 +1,5 @@
 export const CONFIG = {
-    PORT: 3000,
+    PORT: 3005,
     DB_URL: 'mongodb://localhost:27017/pisignage-server',
     
     // Media directories

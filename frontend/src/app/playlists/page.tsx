@@ -13,17 +13,19 @@ export default function PlaylistsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
-    }
-  }, [user, loading, router]);
+  // Temporarily bypass authentication
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     router.push('/auth');
+  //   }
+  // }, [user, loading, router]);
 
   useEffect(() => {
-    if (user) {
+    // Temporarily bypass authentication check
+    // if (user) {
       fetchPlaylists();
-    }
-  }, [user]);
+    // }
+  }, []); // Removed user dependency
 
   const fetchPlaylists = async () => {
     try {
@@ -41,20 +43,21 @@ export default function PlaylistsPage() {
 
 
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Temporarily bypass authentication checks
+  // if (loading) {
+  //   return (
+  //     <div className="flex items-center justify-center py-12">
+  //       <div className="text-center">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+  //       <p className="mt-4 text-gray-600">Loading...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  if (!user) {
-    return null;
-  }
+  // if (!user) {
+  //   return null;
+  // }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

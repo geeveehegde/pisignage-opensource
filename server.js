@@ -7,6 +7,7 @@ import './models/asset.js'; // Import asset model to register it
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createWebSocketServer } from './config/websocket.js';
 
 
 const main = async () => {
@@ -39,8 +40,12 @@ const main = async () => {
         await mongoose.connect(CONFIG.DB_URL);
         const server = createServer(createApp());
 
+        // Initialize WebSocket server
+        const wss = createWebSocketServer(server);
+
         server.listen(CONFIG.PORT, () => {
             console.log(`Server running at http://localhost:${CONFIG.PORT}/`);
+            console.log(`WebSocket server running on ws://localhost:${CONFIG.PORT}/`);
             console.log(`Media directory: ${mediaDir}`);
             console.log(`Thumbnail directory: ${thumbnailDir}`);
         });

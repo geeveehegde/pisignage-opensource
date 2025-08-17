@@ -20,11 +20,12 @@ export default function AssetsPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [assetsLoading, setAssetsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth');
-    }
-  }, [user, loading, router]);
+  // Temporarily bypass authentication
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     router.push('/auth');
+  //   }
+  // }, [user, loading, router]);
 
   // Load assets from API
   const loadAssets = async () => {
@@ -67,10 +68,11 @@ export default function AssetsPage() {
 
   // Load assets when component mounts or filter changes
   useEffect(() => {
-    if (user) {
+    // Temporarily bypass authentication check
+    // if (user) {
       loadAssets();
-    }
-  }, [user, filter]);
+    // }
+  }, [filter]); // Removed user dependency
 
 
 
@@ -117,20 +119,21 @@ export default function AssetsPage() {
 
 
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Temporarily bypass authentication checks
+  // if (loading) {
+  //   return (
+  //     <div className="flex items-center justify-center py-12">
+  //       <div className="text-center">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+  //       <p className="mt-4 text-gray-600">Loading...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  if (!user) {
-    return null;
-  }
+  // if (!user) {
+  //   return null;
+  // }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -41,35 +41,35 @@ router.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Protected routes (auth required)
-router.get('/api/user', requireAuth, (req, res) => {
+// Routes with optional auth
+router.get('/api/user', optionalAuth, (req, res) => {
     res.json(req.user);
 });
 
-// Asset routes (all protected)
-router.get('/api/assets', requireAuth, getAssets);
-router.get('/api/assets/file/:filename', requireAuth, getAsset);
-router.post('/api/assets', requireAuth, createAsset);
-router.put('/api/assets/:id', requireAuth, updateAsset);
-router.delete('/api/assets/file/:filename', requireAuth, deleteAsset);
-router.post('/api/assets/upload', requireAuth, uploadAssets, uploadAsset);
-router.get('/api/assets/playlist/:playlist', requireAuth, getAssetsByPlaylist);
-router.post('/api/assets/playlist/add', requireAuth, addAssetToPlaylist);
-router.post('/api/assets/playlist/remove', requireAuth, removeAssetFromPlaylist);
+// Asset routes (all with optional auth)
+router.get('/api/assets', optionalAuth, getAssets);
+router.get('/api/assets/file/:filename', optionalAuth, getAsset);
+router.post('/api/assets', optionalAuth, createAsset);
+router.put('/api/assets/:id', optionalAuth, updateAsset);
+router.delete('/api/assets/file/:filename', optionalAuth, deleteAsset);
+router.post('/api/assets/upload', optionalAuth, uploadAssets, uploadAsset);
+router.get('/api/assets/playlist/:playlist', optionalAuth, getAssetsByPlaylist);
+router.post('/api/assets/playlist/add', optionalAuth, addAssetToPlaylist);
+router.post('/api/assets/playlist/remove', optionalAuth, removeAssetFromPlaylist);
 
-// Playlist routes (all protected)
-router.get('/api/playlists', requireAuth, getPlaylists);
-router.get('/api/playlists/:file', requireAuth, getPlaylist);
-router.post('/api/playlists', requireAuth, createPlaylist);
-router.put('/api/playlists/:file', requireAuth, savePlaylist);
+// Playlist routes (all with optional auth)
+router.get('/api/playlists', optionalAuth, getPlaylists);
+router.post('/api/playlists', optionalAuth, createPlaylist);
+router.get('/api/playlists/:file', optionalAuth, getPlaylist);
+router.put('/api/playlists/:file', optionalAuth, savePlaylist);
 
-// Group routes (all protected)
-router.get('/api/groups', requireAuth, getGroups);
-router.get('/api/groups/:id', requireAuth, getGroup);
-router.post('/api/groups', requireAuth, createGroup);
-router.put('/api/groups/:id', requireAuth, updateGroup);
-router.delete('/api/groups/:id', requireAuth, deleteGroup);
-router.post('/api/groups/:id/deploy', requireAuth, deployGroup);
+// Group routes (all with optional auth)
+router.get('/api/groups', optionalAuth, getGroups);
+router.get('/api/groups/:id', optionalAuth, getGroup);
+router.post('/api/groups', optionalAuth, createGroup);
+router.put('/api/groups/:id', optionalAuth, updateGroup);
+router.delete('/api/groups/:id', optionalAuth, deleteGroup);
+router.post('/api/groups/:id/deploy', optionalAuth, deployGroup);
 
 // Root route
 router.get('/', (req, res) => {

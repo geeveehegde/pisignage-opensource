@@ -23,10 +23,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   };
 
+  // Temporarily bypass authentication check
   // Don't apply layout to auth page or when not authenticated
-  if (pathname === '/auth' || loading || !user) {
-    return <>{children}</>;
-  }
+  // if (pathname === '/auth' || loading || !user) {
+  //   return <>{children}</>;
+  // }
 
   return (
     <div className="flex h-screen bg-gray-50">

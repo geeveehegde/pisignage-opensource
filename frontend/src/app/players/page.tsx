@@ -12,6 +12,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { groupAPI, Group } from '@/lib/api';
+import { playerAPI } from '@/lib/api';
 
 export default function PlayersPage() {
   const { user, loading } = useAuth();
@@ -19,6 +20,11 @@ export default function PlayersPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [newGroup, setNewGroup] = useState('');
   const [groupsLoading, setGroupsLoading] = useState(false);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Load groups from API
   const loadGroups = async () => {
@@ -33,6 +39,33 @@ export default function PlayersPage() {
     }
   };
 
+  // Load players from API
+  const loadPlayers = async () => {
+    try {
+      setPlayersLoading(true);
+      const params: any = {};
+      
+      if (selectedGroup !== 'all') {
+        params.group = selectedGroup;
+      }
+      
+      if (statusFilter !== 'all') {
+        params.status = statusFilter;
+      }
+      
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+      
+      const response = await playerAPI.getPlayers(params);
+      setPlayers(response.data || []);
+    } catch (error) {
+      console.error('Error loading players:', error);
+    } finally {
+      setPlayersLoading(false);
+    }
+  };
+
   // Temporarily bypass authentication
   // useEffect(() => {
   //   if (!loading && !user) {
@@ -44,8 +77,14 @@ export default function PlayersPage() {
     // Temporarily bypass authentication check
     // if (user) {
       loadGroups();
+      loadPlayers();
     // }
   }, []); // Removed user dependency
+
+  // Reload players when filters change
+  useEffect(() => {
+    loadPlayers();
+  }, [selectedGroup, statusFilter, searchTerm]);
 
 
 
@@ -117,14 +156,29 @@ export default function PlayersPage() {
                         <p className="text-sm text-gray-500">No groups found</p>
                       </div>
                     ) : (
-                      groups.map((group) => (
-                        <div key={group._id} className="p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <div className="font-medium text-gray-900">{group.name}</div>
-                          {group.description && (
-                            <div className="text-sm text-gray-500">{group.description}</div>
-                          )}
+                      <>
+                        <div 
+                          key="all" 
+                          className={`p-2 hover:bg-gray-50 rounded cursor-pointer ${selectedGroup === 'all' ? 'bg-blue-50 border border-blue-200' : ''}`}
+                          onClick={() => setSelectedGroup('all')}
+                        >
+                          <div className="font-medium text-gray-900">All Groups</div>
+                          <div className="text-sm text-gray-500">{players.length} players</div>
                         </div>
-                      ))
+                        {groups.map((group) => {
+                          const groupPlayers = players.filter(p => p.group?.name === group.name);
+                          return (
+                            <div 
+                              key={group._id} 
+                              className={`p-2 hover:bg-gray-50 rounded cursor-pointer ${selectedGroup === group.name ? 'bg-blue-50 border border-blue-200' : ''}`}
+                              onClick={() => setSelectedGroup(group.name)}
+                            >
+                              <div className="font-medium text-gray-900">{group.name}</div>
+                              <div className="text-sm text-gray-500">{groupPlayers.length} players</div>
+                            </div>
+                          );
+                        })}
+                      </>
                     )}
                   </div>
                 </div>
@@ -150,27 +204,128 @@ export default function PlayersPage() {
             </div>
           </div>
 
-          {/* Right Section - Reported Players */}
+          {/* Right Section - Players List */}
           <div className="lg:col-span-2">
             <div className="bg-white border border-gray-200 rounded-lg">
               <div className="bg-blue-100 px-4 py-3 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <h2 className="text-lg font-semibold text-gray-900">Reported Players</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Players</h2>
                     <InformationCircleIcon className="h-5 w-5 text-gray-500" />
-                    <ArrowPathIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-pointer" />
+                    <ArrowPathIcon 
+                      className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-pointer" 
+                      onClick={loadPlayers}
+                    />
                   </div>
-                  <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center space-x-1">
-                    <TagIcon className="h-4 w-4" />
-                    <span>Labels</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="connected">Connected</option>
+                      <option value="disconnected">Disconnected</option>
+                    </select>
+                    <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center space-x-1">
+                      <TagIcon className="h-4 w-4" />
+                      <span>Labels</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               
-              <div className="p-8">
-                <div className="text-center">
-                  <p className="text-gray-600 text-lg">There are no Players</p>
-                </div>
+              {/* Search Bar */}
+              <div className="p-4 border-b border-gray-200">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search players by name or CPU serial number..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900"
+                />
+              </div>
+              
+              {/* Players List */}
+              <div className="p-4">
+                {playersLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Loading players...</p>
+                  </div>
+                ) : players.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-4xl mb-2">📺</div>
+                    <p className="text-gray-600 text-lg">No players found</p>
+                    <p className="text-gray-500 text-sm">
+                      {searchTerm || statusFilter !== 'all' || selectedGroup !== 'all' 
+                        ? 'Try adjusting your filters' 
+                        : 'Players will appear here when they connect'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {players.map((player) => (
+                      <div 
+                        key={player._id} 
+                        className={`p-4 border rounded-lg transition-colors ${
+                          player.isConnected 
+                            ? 'border-green-200 bg-green-50' 
+                            : 'border-red-200 bg-red-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-3 h-3 rounded-full ${
+                                player.isConnected ? 'bg-green-500' : 'bg-red-500'
+                              }`}></div>
+                              <div>
+                                <h3 className="font-medium text-gray-900">
+                                  {player.name || `Player-${player.cpuSerialNumber}`}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  {player.cpuSerialNumber}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-2 grid grid-cols-2 gap-4 text-sm text-gray-600">
+                              <div>
+                                <span className="font-medium">IP:</span> {player.ip || 'Unknown'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Group:</span> {player.group?.name || 'default'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Version:</span> {player.version || 'Unknown'}
+                              </div>
+                              <div>
+                                <span className="font-medium">Last Seen:</span> {
+                                  player.lastReported 
+                                    ? new Date(player.lastReported).toLocaleString()
+                                    : 'Never'
+                                }
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button className="p-2 text-blue-500 hover:text-blue-700 transition-colors" title="View Details">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </button>
+                            <button className="p-2 text-green-500 hover:text-green-700 transition-colors" title="Deploy">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

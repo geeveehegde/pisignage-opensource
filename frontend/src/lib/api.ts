@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
 
 // Create axios instance with credentials
 const api = axios.create({
@@ -48,6 +48,33 @@ export const authAPI = {
   // Get current user
   getCurrentUser: async () => {
     const response = await api.get('/api/user');
+    return response.data;
+  },
+};
+
+// Player API functions
+export const playerAPI = {
+  // Get all players with filtering and pagination
+  getPlayers: async (params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+    group?: string; 
+    search?: string 
+  }) => {
+    const response = await api.get('/api/players', { params });
+    return response.data;
+  },
+
+  // Get single player by ID
+  getPlayer: async (id: string) => {
+    const response = await api.get(`/api/players/${id}`);
+    return response.data;
+  },
+
+  // Get player statistics
+  getPlayerStats: async () => {
+    const response = await api.get('/api/players/stats');
     return response.data;
   },
 };

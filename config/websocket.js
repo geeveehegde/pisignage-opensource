@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws';
-import player from '../app/player.js';
+import {playerConfig} from '../app/player.js';
 
 export const createWebSocketServer = (server) => {
     const wss = new WebSocketServer({ server });
@@ -14,7 +14,7 @@ export const createWebSocketServer = (server) => {
         }));
 
         // Handle incoming messages
-        ws.on('message', function message(msg) {
+        ws.on('message', async function message(msg) {
             var messageArguments = ["none"];
             try {
                 messageArguments = JSON.parse(msg);
@@ -42,22 +42,39 @@ export const createWebSocketServer = (server) => {
                     };
                     
                     console.log('Player status update:', statusObject);
-                    player.updatePlayerStatus(statusObject);
+                    try {
+                        await playerConfig.updatePlayerStatus(statusObject);
+                        console.log('Player status updated successfully');
+                    } catch (error) {
+                        console.error('Error updating player status:', error);
+                    }
                     break;
                     
                 case 'secret_ack':
                     console.log('Secret acknowledgment:', messageArguments[1]);
-                    player.secretAck(ws.id || 'ws_' + Date.now(), !messageArguments[1]);
+                    try {
+                        await playerConfig.secretAck(ws.id || 'ws_' + Date.now(), !messageArguments[1]);
+                    } catch (error) {
+                        console.error('Error in secret acknowledgment:', error);
+                    }
                     break;
 
                 case 'shell_ack':
                     console.log('Shell acknowledgment:', messageArguments[1]);
-                    player.shellAck(ws.id || 'ws_' + Date.now(), messageArguments[1]);
+                    try {
+                        await playerConfig.shellAck(ws.id || 'ws_' + Date.now(), messageArguments[1]);
+                    } catch (error) {
+                        console.error('Error in shell acknowledgment:', error);
+                    }
                     break;
 
                 case 'snapshot':
                     console.log('Screenshot request:', messageArguments[1]);
-                    player.piScreenShot(ws.id || 'ws_' + Date.now(), messageArguments[1]);
+                    try {
+                        await playerConfig.piScreenShot(ws.id || 'ws_' + Date.now(), messageArguments[1]);
+                    } catch (error) {
+                        console.error('Error in screenshot handling:', error);
+                    }
                     break;
 
                 case 'upload':
@@ -65,7 +82,11 @@ export const createWebSocketServer = (server) => {
                         filename = messageArguments[2],
                         data = messageArguments[3];
                     console.log('Upload request:', { playerId, filename, dataSize: data ? data.length : 0 });
-                    player.upload(playerId, filename, data);
+                    try {
+                        await playerConfig.upload(playerId, filename, data);
+                    } catch (error) {
+                        console.error('Error in upload handling:', error);
+                    }
                     break;
                     
                 default:

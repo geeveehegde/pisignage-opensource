@@ -1,7 +1,6 @@
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema
+import mongoose, {Schema} from 'mongoose';
 
-var PlayerSchema = new Schema({
+const PlayerSchema = new mongoose.Schema({
     name:                   String,
     group:                  {_id: {type: Schema.ObjectId, ref: 'Group', index: true},
                                         name: {type: String, default: 'default'}},
@@ -57,20 +56,20 @@ PlayerSchema.path('cpuSerialNumber').validate(function (name) {
 }, 'cpuSerialNumber cannot be blank')
 
 PlayerSchema.statics = {
-   load: function (id, cb) {
-        this.findOne({ _id: id })
-            .exec(cb)
+   load: async function (id) {
+        return await this.findOne({ _id: id });
     },
 
-    list: function (options, cb) {
+    list: async function (options) {
         var criteria = options.criteria || {}
 
-        this.find(criteria)
-            .sort({name: 1}) // sort by date
+        return await this.find(criteria)
+            .sort({name: 1}) // sort by name
             .limit(options.perPage)
-            .skip(options.perPage * options.page)
-            .exec(cb)
+            .skip(options.perPage * options.page);
     }
 }
 
-mongoose.model('Player', PlayerSchema)
+const Player =  mongoose.model('Player', PlayerSchema);
+
+export default Player;

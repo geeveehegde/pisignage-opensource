@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { CONFIG } from './config/config.js';
 import './models/user.js'; // Import user model to register it
 import './models/asset.js'; // Import asset model to register it
+import './models/player.js'; // Import player model to register it
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

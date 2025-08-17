@@ -25,6 +25,7 @@ import {
   deleteGroup,
   deployGroup
 } from '../app/groups.js';
+import {getPlayer, getAllPlayers, getPlayerStats} from '../app/player.js';
 import { uploadAssets } from './multer.js';
 import { requireAuth, optionalAuth } from './auth.js';
 
@@ -70,6 +71,11 @@ router.post('/api/groups', optionalAuth, createGroup);
 router.put('/api/groups/:id', optionalAuth, updateGroup);
 router.delete('/api/groups/:id', optionalAuth, deleteGroup);
 router.post('/api/groups/:id/deploy', optionalAuth, deployGroup);
+
+// Player routes (all with optional auth)
+router.get('/api/players', optionalAuth, getAllPlayers);
+router.get('/api/players/stats', optionalAuth, getPlayerStats);
+router.get('/api/players/:id', optionalAuth, getPlayer);
 
 // Root route
 router.get('/', (req, res) => {

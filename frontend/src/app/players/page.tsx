@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
-  PencilIcon, 
-  PlusIcon, 
   TagIcon,
   InformationCircleIcon,
   ArrowPathIcon,
@@ -20,6 +18,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { groupAPI, Group } from '@/lib/api';
 import { playerAPI } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export default function PlayersPage() {
   const { user, loading } = useAuth();
@@ -49,6 +51,12 @@ export default function PlayersPage() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [useMultiSelection, setUseMultiSelection] = useState(false);
+  
+  // Emergency message dialog state
+  const [emergencyMessageOpen, setEmergencyMessageOpen] = useState(false);
+  const [emergencyMessage, setEmergencyMessage] = useState('');
+  const [emergencyDuration, setEmergencyDuration] = useState('30');
+  const [emergencyPriority, setEmergencyPriority] = useState('high');
 
   // Load groups from API
   const loadGroups = async () => {
@@ -159,22 +167,112 @@ export default function PlayersPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Navigation Bar */}
       <div className="flex justify-end space-x-3 mb-6">
-        <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm flex items-center space-x-2">
-          <ExclamationTriangleIcon className="h-4 w-4" />
-          <span>Emergency Message</span>
-        </button>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-2">
+        <Dialog open={emergencyMessageOpen} onOpenChange={setEmergencyMessageOpen}>
+          <DialogTrigger asChild>
+            <Button variant="destructive" size="sm" className="flex items-center space-x-2">
+              <ExclamationTriangleIcon className="h-4 w-4" />
+              <span>Emergency Message</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Emergency Message</DialogTitle>
+              <DialogDescription>
+                Send an urgent message to all connected players. This message will override current content.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="message" className="text-sm font-medium">
+                  Message
+                </label>
+                <Input
+                  id="message"
+                  value={emergencyMessage}
+                  onChange={(e) => setEmergencyMessage(e.target.value)}
+                  placeholder="Enter emergency message..."
+                  className="w-full"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="duration" className="text-sm font-medium">
+                    Duration (seconds)
+                  </label>
+                  <Select value={emergencyDuration} onValueChange={setEmergencyDuration}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 seconds</SelectItem>
+                      <SelectItem value="30">30 seconds</SelectItem>
+                      <SelectItem value="60">1 minute</SelectItem>
+                      <SelectItem value="300">5 minutes</SelectItem>
+                      <SelectItem value="600">10 minutes</SelectItem>
+                      <SelectItem value="0">Until dismissed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="priority" className="text-sm font-medium">
+                    Priority
+                  </label>
+                  <Select value={emergencyPriority} onValueChange={setEmergencyPriority}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEmergencyMessageOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  // Handle emergency message sending
+                  console.log('Sending emergency message:', {
+                    message: emergencyMessage,
+                    duration: emergencyDuration,
+                    priority: emergencyPriority
+                  });
+                  setEmergencyMessageOpen(false);
+                  setEmergencyMessage('');
+                }}
+                disabled={!emergencyMessage.trim()}
+              >
+                Send Emergency Message
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Button variant="default" size="sm" className="flex items-center space-x-2">
           <TagIcon className="h-4 w-4" />
           <span>Set Group Ticker</span>
-        </button>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-2">
+        </Button>
+        <Button variant="outline" size="sm" className="flex items-center space-x-2">
           <CalendarIcon className="h-4 w-4" />
           <span>view schedule</span>
-        </button>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-2">
+        </Button>
+        <Button variant="default" size="sm" className="flex items-center space-x-2">
           <CogIcon className="h-4 w-4" />
           <span>Settings</span>
-        </button>
+        </Button>
+        <Button variant="default" size="sm" >
+              DEPLOY
+            </Button>
+
       </div>
 
       <div className="space-y-8">
@@ -185,18 +283,16 @@ export default function PlayersPage() {
           {/* Default Playlist Row */}
           <div className="flex items-center space-x-4 mb-6">
             <label className="text-sm font-medium text-gray-700">Default Playlist:</label>
-            <div className="relative">
-              <select 
-                value={defaultPlaylist}
-                onChange={(e) => setDefaultPlaylist(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="default">default</option>
-                <option value="playlist1">playlist1</option>
-                <option value="playlist2">playlist2</option>
-              </select>
-              <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            </div>
+            <Select value={defaultPlaylist} onValueChange={setDefaultPlaylist}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Select playlist" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">default</SelectItem>
+                <SelectItem value="playlist1">playlist1</SelectItem>
+                <SelectItem value="playlist2">playlist2</SelectItem>
+              </SelectContent>
+            </Select>
             <span className="text-sm text-gray-600">Default playlist is played when no scheduled playlists are available</span>
           </div>
 
@@ -245,42 +341,44 @@ export default function PlayersPage() {
 
           {/* Schedule Additional Playlists */}
           <div className="mb-6">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+            <Button variant="default" size="sm">
               + Schedule additional Playlists
-            </button>
+            </Button>
           </div>
 
           {/* Default Settings Row */}
           <div className="flex items-center space-x-6 mb-6">
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-700">Default Playlist for scheduling:</span>
-              <div className="relative">
-                <select className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  <option>default</option>
-                </select>
-                <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              </div>
+              <Select value="default" onValueChange={() => {}}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Select playlist" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">default</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-700">Default Custom Template:</span>
-              <div className="relative">
-                <select className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  <option>default</option>
-                </select>
-                <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              </div>
+              <Select value="default" onValueChange={() => {}}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Select template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">default</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Main Deployment Controls */}
           <div className="flex items-center space-x-4 mb-6">
-            <button className="bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 transition-colors text-lg font-medium">
-              DEPLOY
-            </button>
-            <button className="bg-white text-gray-700 border border-gray-300 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors text-lg font-medium flex items-center space-x-2">
+            
+            <Button variant="outline" size="lg" className="flex items-center space-x-2">
               <ClockIcon className="h-5 w-5" />
               <span>NOW</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -288,9 +386,9 @@ export default function PlayersPage() {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Registered Players </h2>
-            <button className="text-blue-600 hover:text-blue-700">
+            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
               <ArrowPathIcon className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
           
           {/* Summary Statistics */}
@@ -304,56 +402,52 @@ export default function PlayersPage() {
             <div className="flex flex-wrap items-center gap-4">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Filter by Name</label>
-                <input
+                <Input
                   type="text"
                   value={filterName}
                   onChange={(e) => setFilterName(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   placeholder="Enter name"
+                  className="text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Filter by Location</label>
-                <input
+                <Input
                   type="text"
                   value={filterLocation}
                   onChange={(e) => setFilterLocation(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   placeholder="Enter location"
+                  className="text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Filter by category</label>
-                <div className="relative">
-                  <select 
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select category</option>
-                    <option value="office">Office</option>
-                    <option value="retail">Retail</option>
-                    <option value="restaurant">Restaurant</option>
-                  </select>
-                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                </div>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    <SelectItem value="office">Office</SelectItem>
+                    <SelectItem value="retail">Retail</SelectItem>
+                    <SelectItem value="restaurant">Restaurant</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Filter by status</label>
-                <div className="relative">
-                  <select 
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">All status</option>
-                    <option value="online">Online</option>
-                    <option value="offline">Offline</option>
-                    <option value="playing">Playing</option>
-                    <option value="not-playing">Not Playing</option>
-                  </select>
-                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="All status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All status</SelectItem>
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="offline">Offline</SelectItem>
+                    <SelectItem value="playing">Playing</SelectItem>
+                    <SelectItem value="not-playing">Not Playing</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -368,15 +462,15 @@ export default function PlayersPage() {
                 />
                 <span className="text-sm text-gray-700">Use multi-selection</span>
               </label>
-              <button className="text-blue-600 hover:text-blue-700 text-sm underline">
+              <Button variant="link" size="sm" className="text-blue-600 hover:text-blue-700 underline">
                 Download List
-              </button>
-              <button className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm">
+              </Button>
+              <Button variant="outline" size="sm">
                 Schedule Update
-              </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+              </Button>
+              <Button variant="default" size="sm">
                 Register a Player
-              </button>
+              </Button>
             </div>
           </div>
 

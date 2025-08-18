@@ -228,6 +228,30 @@ const GroupSchema = new Schema({
 
 // Static methods
 GroupSchema.statics = {
+                    // Ensure default group exists
+                ensureDefaultGroup: async function() {
+                    try {
+                        let defaultGroup = await this.findOne({ name: 'default' });
+                        
+                        if (!defaultGroup) {
+                            console.log('Creating default group...');
+                            defaultGroup = new this({
+                                name: 'default'
+                            });
+                            
+                            await defaultGroup.save();
+                            console.log('✅ Default group created successfully');
+                        } else {
+                            console.log('✅ Default group already exists');
+                        }
+                        
+                        return defaultGroup;
+                    } catch (error) {
+                        console.error('❌ Error ensuring default group:', error);
+                        throw error;
+                    }
+                },
+
     // Load a single group by ID
     load: async function(id) {
         try {
@@ -366,5 +390,10 @@ GroupSchema.index({ createdAt: -1 });
 GroupSchema.index({ 'createdBy._id': 1 });
 
 const Group = mongoose.model('Group', GroupSchema);
+
+// Ensure default group exists when model is imported
+Group.ensureDefaultGroup().catch(error => {
+    console.error('Failed to ensure default group:', error);
+});
 
 export default Group;

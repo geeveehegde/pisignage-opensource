@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import _ from 'lodash';
 import Player from '../models/player.js';
-const defaultGroup = {_id: 0, name: 'default'};
+import Group from '../models/group.js';
 
 export const playerConfig = {
     updatePlayerCount : {},
@@ -32,7 +32,25 @@ export const playerConfig = {
             } else {
                 // Create new player
                 player = new Player(obj);
-                player.group = defaultGroup; 
+                
+                // Get the default group from database
+                try {
+                    const defaultGroup = await Group.findOne({ name: 'default' });
+                    if (defaultGroup) {
+                        player.group = {
+                            _id: defaultGroup._id,
+                            name: defaultGroup.name
+                        };
+                    } else {
+                        // Fallback if default group doesn't exist
+                        player.group = { name: 'default' };
+                        console.warn('Default group not found, using fallback');
+                    }
+                } catch (error) {
+                    console.error('Error finding default group:', error);
+                    player.group = { name: 'default' };
+                }
+                
                 player.installation = 'local'; 
                 player.isConnected = true;
             }
@@ -140,57 +158,106 @@ export const playerConfig = {
     // API function to get all players
     export const getAllPlayers = async (req, res) => {
         try {
-            const { page = 1, limit = 50, status, group, search } = req.query;
-            
-            const query = {};
-            
-            // Filter by connection status
-            if (status === 'connected') {
-                query.isConnected = true;
-            } else if (status === 'disconnected') {
-                query.isConnected = false;
+            var criteria = {};
+
+            // Filter by group ID
+            if (req.query['group']) {
+                criteria['group._id'] = req.query['group'];
             }
-            
-            // Filter by group
-            if (group) {
-                query['group.name'] = group;
+
+            // Filter by group name
+            if (req.query['groupName']) {
+                criteria['group.name'] = req.query['groupName'];
             }
-            
-            // Search by name or cpuSerialNumber
-            if (search) {
-                query.$or = [
-                    { name: { $regex: search, $options: 'i' } },
-                    { cpuSerialNumber: { $regex: search, $options: 'i' } }
+
+            // Search by string (player name)
+            if (req.query['string']) {
+                var str = new RegExp(req.query['string'], "i");
+                criteria['name'] = str;
+            }
+
+            // Filter by location
+            if (req.query['location']) {
+                criteria['$or'] = [
+                    { 'location': req.query['location'] }, 
+                    { 'configLocation': req.query['location'] }
                 ];
             }
 
-            const options = {
-                page: parseInt(page),
-                perPage: parseInt(limit),
-                criteria: query
+            // Filter by label
+            if (req.query['label']) {
+                criteria['labels'] = req.query['label'];
+            }
+
+            // Filter by current playlist
+            if (req.query['currentPlaylist']) {
+                criteria['currentPlaylist'] = req.query['currentPlaylist'];
+            }
+
+            // Filter by version
+            if (req.query['version']) {
+                criteria['version'] = req.query['version'];
+            }
+
+            // Filter by connection status
+            if (req.query['status'] === 'connected') {
+                criteria['isConnected'] = true;
+            } else if (req.query['status'] === 'disconnected') {
+                criteria['isConnected'] = false;
+            }
+
+            // Pagination
+            var page = req.query['page'] > 0 ? parseInt(req.query['page']) : 0;
+            var perPage = req.query['per_page'] || req.query['limit'] || 500;
+
+            var options = {
+                perPage: perPage,
+                page: page,
+                criteria: criteria
             };
+
+            console.log('Player query criteria:', criteria);
+            console.log('Player query options:', options);
 
             // Use the static list method from Player model
             try {
                 const players = await Player.list(options);
                 
+                var data = {
+                    objects: players,
+                    page: page,
+                    pages: Math.ceil(players.length / perPage),
+                    count: players.length
+                };
+
+                // Add version information if available
+                try {
+                    const pipkgjson = await import('../../package.json', { assert: { type: 'json' } });
+                    data.currentVersion = {
+                        version: pipkgjson.default.version || 'unknown',
+                        platform_version: pipkgjson.default.platform_version || 'unknown'
+                    };
+                } catch (versionError) {
+                    console.log('Version info not available:', versionError.message);
+                    data.currentVersion = {
+                        version: 'unknown',
+                        platform_version: 'unknown'
+                    };
+                }
+
                 res.json({
                     success: true,
-                    data: players,
-                    pagination: {
-                        page: options.page,
-                        limit: options.perPage
-                    }
+                    message: 'sending Player list',
+                    data: data
                 });
             } catch (err) {
                 console.error('Error listing players:', err);
                 return res.status(500).json({
                     success: false,
-                    message: 'Internal server error',
+                    message: 'Unable to get Player list',
                     error: err.message
                 });
             }
-
         } catch (error) {
             console.error('Error getting all players:', error);
             res.status(500).json({
@@ -234,7 +301,7 @@ export const playerConfig = {
                     disconnected: disconnectedPlayers,
                     recentActivity,
                     groupStats,
-                    activePlayers: Object.keys(this.activePlayers).length
+                    activePlayers: 0 // TODO: Get from playerConfig if needed
                 }
             });
 

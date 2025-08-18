@@ -9,7 +9,14 @@ import {
   PlusIcon, 
   TagIcon,
   InformationCircleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  CalendarIcon, 
+  CogIcon, 
+  ExclamationTriangleIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  ArrowUpIcon,
+  ArrowDownIcon
 } from '@heroicons/react/24/outline';
 import { groupAPI, Group } from '@/lib/api';
 import { playerAPI } from '@/lib/api';
@@ -25,6 +32,23 @@ export default function PlayersPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [serverVersion, setServerVersion] = useState<any>({});
+  const [pagination, setPagination] = useState<any>({});
+
+  // Form states for PiSignage interface
+  const [defaultPlaylist, setDefaultPlaylist] = useState('default');
+  const [deployOptions, setDeployOptions] = useState({
+    playDefaultAlongside: false,
+    combineContent: false,
+    shuffleContent: false,
+    switchAtEnd: false
+  });
+  const [defaultCustomTemplate, setDefaultCustomTemplate] = useState('default');
+  const [filterName, setFilterName] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [useMultiSelection, setUseMultiSelection] = useState(false);
 
   // Load groups from API
   const loadGroups = async () => {
@@ -46,7 +70,7 @@ export default function PlayersPage() {
       const params: any = {};
       
       if (selectedGroup !== 'all') {
-        params.group = selectedGroup;
+        params.groupName = selectedGroup; // Use groupName parameter for filtering by group name
       }
       
       if (statusFilter !== 'all') {
@@ -54,11 +78,21 @@ export default function PlayersPage() {
       }
       
       if (searchTerm.trim()) {
-        params.search = searchTerm.trim();
+        params.string = searchTerm.trim(); // Use 'string' parameter for name search
       }
       
       const response = await playerAPI.getPlayers(params);
-      setPlayers(response.data || []);
+      // Extract players from the new response structure
+      const playersData = response.data?.objects || [];
+      setPlayers(playersData);
+      // Store server version information
+      setServerVersion(response.data?.currentVersion || {});
+      // Store pagination information
+      setPagination({
+        page: response.data?.page || 0,
+        pages: response.data?.pages || 1,
+        count: response.data?.count || 0
+      });
     } catch (error) {
       console.error('Error loading players:', error);
     } finally {
@@ -66,13 +100,14 @@ export default function PlayersPage() {
     }
   };
 
-  // Temporarily bypass authentication
-  // useEffect(() => {
-  //   if (!loading && !user) {
-  //     router.push('/auth');
-  //   }
-  // }, [user, loading, router]);
+  const handleDeployOptionChange = (option: keyof typeof deployOptions) => {
+    setDeployOptions(prev => ({
+      ...prev,
+      [option]: !prev[option]
+    }));
+  };
 
+  // Temporarily bypass authentication
   useEffect(() => {
     // Temporarily bypass authentication check
     // if (user) {
@@ -85,8 +120,6 @@ export default function PlayersPage() {
   useEffect(() => {
     loadPlayers();
   }, [selectedGroup, statusFilter, searchTerm]);
-
-
 
   const addGroup = async () => {
     if (newGroup.trim()) {
@@ -111,8 +144,8 @@ export default function PlayersPage() {
   //   return (
   //     <div className="flex items-center justify-center py-12">
   //       <div className="text-center">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-  //       <p className="mt-12 text-gray-600">Loading...</p>
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+  //         <p className="mt-4 text-gray-600">Loading...</p>
   //       </div>
   //     </div>
   //   );
@@ -124,212 +157,287 @@ export default function PlayersPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Section - Groups */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="bg-blue-100 px-4 py-3 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Groups</h2>
-                  <div className="flex space-x-2">
-                    <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
-                      Deploy all
-                    </button>
-                    <button className="px-3 py-1 bg-white text-red-600 text-sm border border-red-600 rounded hover:bg-red-50 transition-colors">
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-4">
-                {/* Groups List */}
-                <div className="mb-4">
-                  <div className="border border-gray-300 rounded-md p-2 h-32 overflow-y-auto">
-                    {groupsLoading ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-sm text-gray-600">Loading groups...</p>
-                      </div>
-                    ) : groups.length === 0 ? (
-                      <div className="text-center py-4">
-                        <p className="text-sm text-gray-500">No groups found</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div 
-                          key="all" 
-                          className={`p-2 hover:bg-gray-50 rounded cursor-pointer ${selectedGroup === 'all' ? 'bg-blue-50 border border-blue-200' : ''}`}
-                          onClick={() => setSelectedGroup('all')}
-                        >
-                          <div className="font-medium text-gray-900">All Groups</div>
-                          <div className="text-sm text-gray-500">{players.length} players</div>
-                        </div>
-                        {groups.map((group) => {
-                          const groupPlayers = players.filter(p => p.group?.name === group.name);
-                          return (
-                            <div 
-                              key={group._id} 
-                              className={`p-2 hover:bg-gray-50 rounded cursor-pointer ${selectedGroup === group.name ? 'bg-blue-50 border border-blue-200' : ''}`}
-                              onClick={() => setSelectedGroup(group.name)}
-                            >
-                              <div className="font-medium text-gray-900">{group.name}</div>
-                              <div className="text-sm text-gray-500">{groupPlayers.length} players</div>
-                            </div>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                </div>
+      {/* Top Navigation Bar */}
+      <div className="flex justify-end space-x-3 mb-6">
+        <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm flex items-center space-x-2">
+          <ExclamationTriangleIcon className="h-4 w-4" />
+          <span>Emergency Message</span>
+        </button>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-2">
+          <TagIcon className="h-4 w-4" />
+          <span>Set Group Ticker</span>
+        </button>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-2">
+          <CalendarIcon className="h-4 w-4" />
+          <span>view schedule</span>
+        </button>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center space-x-2">
+          <CogIcon className="h-4 w-4" />
+          <span>Settings</span>
+        </button>
+      </div>
 
-                {/* Add New Group */}
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={newGroup}
-                    onChange={(e) => setNewGroup(e.target.value)}
-                    onKeyPress={handleGroupKeyPress}
-                    placeholder="Add new group"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900"
-                  />
-                  <button
-                    onClick={addGroup}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </button>
-                </div>
+      <div className="space-y-8">
+        {/* Schedule Playlists for default Section */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Schedule Playlists for default</h2>
+          
+          {/* Default Playlist Row */}
+          <div className="flex items-center space-x-4 mb-6">
+            <label className="text-sm font-medium text-gray-700">Default Playlist:</label>
+            <div className="relative">
+              <select 
+                value={defaultPlaylist}
+                onChange={(e) => setDefaultPlaylist(e.target.value)}
+                className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="default">default</option>
+                <option value="playlist1">playlist1</option>
+                <option value="playlist2">playlist2</option>
+              </select>
+              <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+            <span className="text-sm text-gray-600">Default playlist is played when no scheduled playlists are available</span>
+          </div>
+
+          {/* Deploy Options */}
+          <div className="space-y-3 mb-6">
+            <h3 className="text-sm font-medium text-gray-700">Deploy Options:</h3>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={deployOptions.playDefaultAlongside}
+                  onChange={() => handleDeployOptionChange('playDefaultAlongside')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Play default playlist along with scheduled playlist(s)</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={deployOptions.combineContent}
+                  onChange={() => handleDeployOptionChange('combineContent')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Combine content of all scheduled playlists</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={deployOptions.shuffleContent}
+                  onChange={() => handleDeployOptionChange('shuffleContent')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Shuffle content every cycle</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={deployOptions.switchAtEnd}
+                  onChange={() => handleDeployOptionChange('switchAtEnd')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Switch to new at the end of current playlist</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Schedule Additional Playlists */}
+          <div className="mb-6">
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+              + Schedule additional Playlists
+            </button>
+          </div>
+
+          {/* Default Settings Row */}
+          <div className="flex items-center space-x-6 mb-6">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">Default Playlist for scheduling:</span>
+              <div className="relative">
+                <select className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option>default</option>
+                </select>
+                <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">Default Custom Template:</span>
+              <div className="relative">
+                <select className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <option>default</option>
+                </select>
+                <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
             </div>
           </div>
 
-          {/* Right Section - Players List */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="bg-blue-100 px-4 py-3 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <h2 className="text-lg font-semibold text-gray-900">Players</h2>
-                    <InformationCircleIcon className="h-5 w-5 text-gray-500" />
-                    <ArrowPathIcon 
-                      className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-pointer" 
-                      onClick={loadPlayers}
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-3 py-1 border border-gray-300 rounded text-sm"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="connected">Connected</option>
-                      <option value="disconnected">Disconnected</option>
-                    </select>
-                    <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center space-x-1">
-                      <TagIcon className="h-4 w-4" />
-                      <span>Labels</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Search Bar */}
-              <div className="p-4 border-b border-gray-200">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search players by name or CPU serial number..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900"
-                />
-              </div>
-              
-              {/* Players List */}
-              <div className="p-4">
-                {playersLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Loading players...</p>
-                  </div>
-                ) : players.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-gray-400 text-4xl mb-2">📺</div>
-                    <p className="text-gray-600 text-lg">No players found</p>
-                    <p className="text-gray-500 text-sm">
-                      {searchTerm || statusFilter !== 'all' || selectedGroup !== 'all' 
-                        ? 'Try adjusting your filters' 
-                        : 'Players will appear here when they connect'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {players.map((player) => (
-                      <div 
-                        key={player._id} 
-                        className={`p-4 border rounded-lg transition-colors ${
-                          player.isConnected 
-                            ? 'border-green-200 bg-green-50' 
-                            : 'border-red-200 bg-red-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-3 h-3 rounded-full ${
-                                player.isConnected ? 'bg-green-500' : 'bg-red-500'
-                              }`}></div>
-                              <div>
-                                <h3 className="font-medium text-gray-900">
-                                  {player.name || `Player-${player.cpuSerialNumber}`}
-                                </h3>
-                                <p className="text-sm text-gray-600">
-                                  {player.cpuSerialNumber}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-2 grid grid-cols-2 gap-4 text-sm text-gray-600">
-                              <div>
-                                <span className="font-medium">IP:</span> {player.ip || 'Unknown'}
-                              </div>
-                              <div>
-                                <span className="font-medium">Group:</span> {player.group?.name || 'default'}
-                              </div>
-                              <div>
-                                <span className="font-medium">Version:</span> {player.version || 'Unknown'}
-                              </div>
-                              <div>
-                                <span className="font-medium">Last Seen:</span> {
-                                  player.lastReported 
-                                    ? new Date(player.lastReported).toLocaleString()
-                                    : 'Never'
-                                }
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button className="p-2 text-blue-500 hover:text-blue-700 transition-colors" title="View Details">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </button>
-                            <button className="p-2 text-green-500 hover:text-green-700 transition-colors" title="Deploy">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Main Deployment Controls */}
+          <div className="flex items-center space-x-4 mb-6">
+            <button className="bg-green-600 text-white px-8 py-3 rounded-md hover:bg-green-700 transition-colors text-lg font-medium">
+              DEPLOY
+            </button>
+            <button className="bg-white text-gray-700 border border-gray-300 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors text-lg font-medium flex items-center space-x-2">
+              <ClockIcon className="h-5 w-5" />
+              <span>NOW</span>
+            </button>
           </div>
         </div>
+
+        {/* Registered Players Section */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Registered Players </h2>
+            <button className="text-blue-600 hover:text-blue-700">
+              <ArrowPathIcon className="h-5 w-5" />
+            </button>
+          </div>
+          
+          {/* Summary Statistics */}
+          <div className="text-sm text-gray-600 mb-6">
+            total:1 online:0 not-playing:0 licensed:1
+          </div>
+
+          {/* Filter and Action Bar */}
+          <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            {/* Filter Inputs */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Filter by Name</label>
+                <input
+                  type="text"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Enter name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Filter by Location</label>
+                <input
+                  type="text"
+                  value={filterLocation}
+                  onChange={(e) => setFilterLocation(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Enter location"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Filter by category</label>
+                <div className="relative">
+                  <select 
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select category</option>
+                    <option value="office">Office</option>
+                    <option value="retail">Retail</option>
+                    <option value="restaurant">Restaurant</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Filter by status</label>
+                <div className="relative">
+                  <select 
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All status</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                    <option value="playing">Playing</option>
+                    <option value="not-playing">Not Playing</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Checkbox and Action Buttons */}
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={useMultiSelection}
+                  onChange={(e) => setUseMultiSelection(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Use multi-selection</span>
+              </label>
+              <button className="text-blue-600 hover:text-blue-700 text-sm underline">
+                Download List
+              </button>
+              <button className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors text-sm">
+                Schedule Update
+              </button>
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                Register a Player
+              </button>
+            </div>
+          </div>
+
+          {/* Player List Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <div className="flex items-center space-x-1">
+                      <span>Player name</span>
+                      <ArrowUpIcon className="h-3 w-3" />
+                      <ClockIcon className="h-3 w-3" />
+                      <ArrowDownIcon className="h-3 w-3" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Current Playlist
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Group
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-blue-600 cursor-pointer hover:underline">
+                      piplayer
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-blue-600 cursor-pointer hover:underline">
+                      default
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-blue-600 cursor-pointer hover:underline">
+                      default
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-blue-600 cursor-pointer hover:underline">
+                      Bengaluru, KA
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

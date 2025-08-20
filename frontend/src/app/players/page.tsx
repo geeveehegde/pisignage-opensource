@@ -19,9 +19,12 @@ import {
 import { groupAPI, Group } from '@/lib/api';
 import { playerAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import TickerDialog from './components/TickerDialog';
+import EmergencyMessageDialog from './components/EmergencyMessageDialog';
+import SettingsDialog from './components/SettingsDialog';
 
 export default function PlayersPage() {
   const { user, loading } = useAuth();
@@ -52,11 +55,10 @@ export default function PlayersPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [useMultiSelection, setUseMultiSelection] = useState(false);
   
-  // Emergency message dialog state
+  // Dialog state
   const [emergencyMessageOpen, setEmergencyMessageOpen] = useState(false);
-  const [emergencyMessage, setEmergencyMessage] = useState('');
-  const [emergencyDuration, setEmergencyDuration] = useState('30');
-  const [emergencyPriority, setEmergencyPriority] = useState('high');
+  const [groupTickerOpen, setGroupTickerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Load groups from API
   const loadGroups = async () => {
@@ -167,108 +169,22 @@ export default function PlayersPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Navigation Bar */}
       <div className="flex justify-end space-x-3 mb-6">
-        <Dialog open={emergencyMessageOpen} onOpenChange={setEmergencyMessageOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive" size="sm" className="flex items-center space-x-2">
-              <ExclamationTriangleIcon className="h-4 w-4" />
-              <span>Emergency Message</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Emergency Message</DialogTitle>
-              <DialogDescription>
-                Send an urgent message to all connected players. This message will override current content.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label htmlFor="message" className="text-sm font-medium">
-                  Message
-                </label>
-                <Input
-                  id="message"
-                  value={emergencyMessage}
-                  onChange={(e) => setEmergencyMessage(e.target.value)}
-                  placeholder="Enter emergency message..."
-                  className="w-full"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="duration" className="text-sm font-medium">
-                    Duration (seconds)
-                  </label>
-                  <Select value={emergencyDuration} onValueChange={setEmergencyDuration}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 seconds</SelectItem>
-                      <SelectItem value="30">30 seconds</SelectItem>
-                      <SelectItem value="60">1 minute</SelectItem>
-                      <SelectItem value="300">5 minutes</SelectItem>
-                      <SelectItem value="600">10 minutes</SelectItem>
-                      <SelectItem value="0">Until dismissed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="priority" className="text-sm font-medium">
-                    Priority
-                  </label>
-                  <Select value={emergencyPriority} onValueChange={setEmergencyPriority}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setEmergencyMessageOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  // Handle emergency message sending
-                  console.log('Sending emergency message:', {
-                    message: emergencyMessage,
-                    duration: emergencyDuration,
-                    priority: emergencyPriority
-                  });
-                  setEmergencyMessageOpen(false);
-                  setEmergencyMessage('');
-                }}
-                disabled={!emergencyMessage.trim()}
-              >
-                Send Emergency Message
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Button variant="default" size="sm" className="flex items-center space-x-2">
-          <TagIcon className="h-4 w-4" />
-          <span>Set Group Ticker</span>
-        </Button>
+                <EmergencyMessageDialog
+          open={emergencyMessageOpen}
+          onOpenChange={setEmergencyMessageOpen}
+        />
+        <TickerDialog
+          open={groupTickerOpen}
+          onOpenChange={setGroupTickerOpen}
+        />
         <Button variant="outline" size="sm" className="flex items-center space-x-2">
           <CalendarIcon className="h-4 w-4" />
           <span>view schedule</span>
         </Button>
-        <Button variant="default" size="sm" className="flex items-center space-x-2">
-          <CogIcon className="h-4 w-4" />
-          <span>Settings</span>
-        </Button>
+        <SettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
         <Button variant="default" size="sm" >
               DEPLOY
             </Button>
@@ -301,38 +217,30 @@ export default function PlayersPage() {
             <h3 className="text-sm font-medium text-gray-700">Deploy Options:</h3>
             <div className="space-y-2">
               <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={deployOptions.playDefaultAlongside}
-                  onChange={() => handleDeployOptionChange('playDefaultAlongside')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={(checked) => handleDeployOptionChange('playDefaultAlongside')}
                 />
                 <span className="text-sm text-gray-700">Play default playlist along with scheduled playlist(s)</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={deployOptions.combineContent}
-                  onChange={() => handleDeployOptionChange('combineContent')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={(checked) => handleDeployOptionChange('combineContent')}
                 />
                 <span className="text-sm text-gray-700">Combine content of all scheduled playlists</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={deployOptions.shuffleContent}
-                  onChange={() => handleDeployOptionChange('shuffleContent')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={(checked) => handleDeployOptionChange('shuffleContent')}
                 />
                 <span className="text-sm text-gray-700">Shuffle content every cycle</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={deployOptions.switchAtEnd}
-                  onChange={() => handleDeployOptionChange('switchAtEnd')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={(checked) => handleDeployOptionChange('switchAtEnd')}
                 />
                 <span className="text-sm text-gray-700">Switch to new at the end of current playlist</span>
               </label>
@@ -372,14 +280,6 @@ export default function PlayersPage() {
             </div>
           </div>
 
-          {/* Main Deployment Controls */}
-          <div className="flex items-center space-x-4 mb-6">
-            
-            <Button variant="outline" size="lg" className="flex items-center space-x-2">
-              <ClockIcon className="h-5 w-5" />
-              <span>NOW</span>
-            </Button>
-          </div>
         </div>
 
         {/* Registered Players Section */}
@@ -454,11 +354,9 @@ export default function PlayersPage() {
             {/* Checkbox and Action Buttons */}
             <div className="flex items-center space-x-4">
               <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={useMultiSelection}
-                  onChange={(e) => setUseMultiSelection(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={(checked) => setUseMultiSelection(checked as boolean)}
                 />
                 <span className="text-sm text-gray-700">Use multi-selection</span>
               </label>

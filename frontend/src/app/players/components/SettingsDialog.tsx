@@ -14,72 +14,122 @@ interface SettingsDialogProps {
   trigger?: React.ReactNode;
 }
 
-export default function SettingsDialog({ open, onOpenChange, trigger }: SettingsDialogProps) {
-  // Display settings state
-  const [resolution, setResolution] = useState('auto');
-  const [orientation, setOrientation] = useState('landscape');
-  const [mirrorScreens, setMirrorScreens] = useState(true);
-  const [enable4k, setEnable4k] = useState(false);
-  const [tileHorizontal, setTileHorizontal] = useState(false);
-  const [tileVertical, setTileVertical] = useState(false);
-  const [reverseOrder, setReverseOrder] = useState(false);
-  const [animation, setAnimation] = useState('disable');
-  const [slideDirection, setSlideDirection] = useState('right');
-  const [backgroundColor, setBackgroundColor] = useState('#000');
-  const [volume, setVolume] = useState('100');
-  const [showLogo, setShowLogo] = useState(false);
-  const [logoX, setLogoX] = useState('10');
-  const [logoY, setLogoY] = useState('10');
-  const [displayClock, setDisplayClock] = useState(false);
-  const [fitImage, setFitImage] = useState('stretched');
-  const [fitVideo, setFitVideo] = useState('stretched');
-  const [reloadUrls, setReloadUrls] = useState(false);
-  const [keepWebpages, setKeepWebpages] = useState(false);
-  const [breakVideo, setBreakVideo] = useState('0');
-  const [scheduleDisplayOff, setScheduleDisplayOff] = useState(false);
-  const [dailyReboot, setDailyReboot] = useState(false);
-  const [kioskMenu, setKioskMenu] = useState(false);
-  const [videoPlayer, setVideoPlayer] = useState('default');
+interface Settings {
+  // Display settings
+  resolution: string;
+  orientation: string;
+  mirrorScreens: boolean;
+  enable4k: boolean;
+  tileHorizontal: boolean;
+  tileVertical: boolean;
+  reverseOrder: boolean;
+  animation: string;
+  slideDirection: string;
+  backgroundColor: string;
+  volume: string;
+  showLogo: boolean;
+  logoX: string;
+  logoY: string;
+  displayClock: boolean;
+  fitImage: string;
+  fitVideo: string;
+  reloadUrls: boolean;
+  keepWebpages: boolean;
+  breakVideo: string;
+  scheduleDisplayOff: boolean;
+  dailyReboot: boolean;
+  kioskMenu: boolean;
+  videoPlayer: string;
+  
+  // Player settings
+  disableWifiAP: boolean;
+  disableWebUI: boolean;
+  disablePowerWarning: boolean;
+  enableGPIO: boolean;
+}
 
-  // Player settings state
-  const [disableWifiAP, setDisableWifiAP] = useState(false);
-  const [disableWebUI, setDisableWebUI] = useState(false);
-  const [disablePowerWarning, setDisablePowerWarning] = useState(false);
-  const [enableGPIO, setEnableGPIO] = useState(false);
+export default function SettingsDialog({ open, onOpenChange, trigger }: SettingsDialogProps) {
+  const [settings, setSettings] = useState<Settings>({
+    // Display settings
+    resolution: 'auto',
+    orientation: 'landscape',
+    mirrorScreens: true,
+    enable4k: false,
+    tileHorizontal: false,
+    tileVertical: false,
+    reverseOrder: false,
+    animation: 'disable',
+    slideDirection: 'right',
+    backgroundColor: '#000',
+    volume: '100',
+    showLogo: false,
+    logoX: '10',
+    logoY: '10',
+    displayClock: false,
+    fitImage: 'stretched',
+    fitVideo: 'stretched',
+    reloadUrls: false,
+    keepWebpages: false,
+    breakVideo: '0',
+    scheduleDisplayOff: false,
+    dailyReboot: false,
+    kioskMenu: false,
+    videoPlayer: 'default',
+    
+    // Player settings
+    disableWifiAP: false,
+    disableWebUI: false,
+    disablePowerWarning: false,
+    enableGPIO: false
+  });
+
+  const updateSetting = (key: keyof Settings, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleDualScreenChange = (value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      mirrorScreens: value === 'mirror',
+      enable4k: value === '4k',
+      tileHorizontal: value === 'horizontal',
+      tileVertical: value === 'vertical'
+    }));
+  };
 
   const handleSave = () => {
     console.log('Saving settings:', {
       display: {
-        resolution,
-        orientation,
-        mirrorScreens,
-        enable4k,
-        tileHorizontal,
-        tileVertical,
-        reverseOrder,
-        animation,
-        slideDirection,
-        backgroundColor,
-        volume,
-        showLogo,
-        logoX,
-        logoY,
-        displayClock,
-        fitImage,
-        fitVideo,
-        reloadUrls,
-        keepWebpages,
-        breakVideo,
-        scheduleDisplayOff,
-        dailyReboot,
-        kioskMenu,
-        videoPlayer
+        resolution: settings.resolution,
+        orientation: settings.orientation,
+        mirrorScreens: settings.mirrorScreens,
+        enable4k: settings.enable4k,
+        tileHorizontal: settings.tileHorizontal,
+        tileVertical: settings.tileVertical,
+        reverseOrder: settings.reverseOrder,
+        animation: settings.animation,
+        slideDirection: settings.slideDirection,
+        backgroundColor: settings.backgroundColor,
+        volume: settings.volume,
+        showLogo: settings.showLogo,
+        logoX: settings.logoX,
+        logoY: settings.logoY,
+        displayClock: settings.displayClock,
+        fitImage: settings.fitImage,
+        fitVideo: settings.fitVideo,
+        reloadUrls: settings.reloadUrls,
+        keepWebpages: settings.keepWebpages,
+        breakVideo: settings.breakVideo,
+        scheduleDisplayOff: settings.scheduleDisplayOff,
+        dailyReboot: settings.dailyReboot,
+        kioskMenu: settings.kioskMenu,
+        videoPlayer: settings.videoPlayer
       },
       player: {
-        disableWifiAP,
-        disableWebUI,
-        disablePowerWarning,
-        enableGPIO
+        disableWifiAP: settings.disableWifiAP,
+        disableWebUI: settings.disableWebUI,
+        disablePowerWarning: settings.disablePowerWarning,
+        enableGPIO: settings.enableGPIO
       }
     });
     onOpenChange(false);
@@ -104,7 +154,7 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Resolution:</label>
-              <RadioGroup value={resolution} onValueChange={setResolution} className="space-y-2">
+              <RadioGroup value={settings.resolution} onValueChange={(value) => updateSetting('resolution', value)} className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="auto" id="auto" />
                   <label htmlFor="auto" className="text-sm text-gray-700">Auto based on TV settings(EDID)</label>
@@ -129,7 +179,7 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
             </div>
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Orientation:</label>
-              <RadioGroup value={orientation} onValueChange={setOrientation} className="space-y-2">
+              <RadioGroup value={settings.orientation} onValueChange={(value) => updateSetting('orientation', value)} className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="landscape" id="landscape" />
                   <label htmlFor="landscape" className="text-sm text-gray-700">Landscape Mode</label>
@@ -158,14 +208,11 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="space-y-3">
             <label className="text-sm font-medium text-gray-700">Dual Screen (Pi4,v4.x only):</label>
             <div className="grid grid-cols-2 gap-6">
-              <RadioGroup value={mirrorScreens ? 'mirror' : enable4k ? '4k' : tileHorizontal ? 'horizontal' : tileVertical ? 'vertical' : 'mirror'} 
-                         onValueChange={(value) => {
-                           setMirrorScreens(value === 'mirror');
-                           setEnable4k(value === '4k');
-                           setTileHorizontal(value === 'horizontal');
-                           setTileVertical(value === 'vertical');
-                         }} 
-                         className="space-y-2">
+              <RadioGroup 
+                value={settings.mirrorScreens ? 'mirror' : settings.enable4k ? '4k' : settings.tileHorizontal ? 'horizontal' : settings.tileVertical ? 'vertical' : 'mirror'} 
+                onValueChange={handleDualScreenChange} 
+                className="space-y-2"
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="mirror" id="mirror" />
                   <label htmlFor="mirror" className="text-sm text-gray-700">Mirror Screens</label>
@@ -186,8 +233,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="reverseOrder"
-                  checked={reverseOrder}
-                  onCheckedChange={(checked) => setReverseOrder(checked === true)}
+                  checked={settings.reverseOrder}
+                  onCheckedChange={(checked) => updateSetting('reverseOrder', checked === true)}
                 />
                 <label htmlFor="reverseOrder" className="text-sm text-gray-700">Reverse order</label>
               </div>
@@ -198,7 +245,7 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Animation:</label>
-              <RadioGroup value={animation} onValueChange={setAnimation} className="space-y-2">
+              <RadioGroup value={settings.animation} onValueChange={(value) => updateSetting('animation', value)} className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="disable" id="disable" />
                   <label htmlFor="disable" className="text-sm text-gray-700">Disable</label>
@@ -211,7 +258,7 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
             </div>
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Slide Direction:</label>
-              <RadioGroup value={slideDirection} onValueChange={setSlideDirection} className="space-y-2">
+              <RadioGroup value={settings.slideDirection} onValueChange={(value) => updateSetting('slideDirection', value)} className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="right" id="slide-right" />
                   <label htmlFor="slide-right" className="text-sm text-gray-700">Slide right</label>
@@ -239,11 +286,11 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
               <div className="flex items-center space-x-2">
                 <div 
                   className="w-8 h-8 border border-gray-300 rounded"
-                  style={{ backgroundColor: backgroundColor }}
+                  style={{ backgroundColor: settings.backgroundColor }}
                 />
                 <Input
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  value={settings.backgroundColor}
+                  onChange={(e) => updateSetting('backgroundColor', e.target.value)}
                   className="w-24"
                 />
               </div>
@@ -252,8 +299,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
               <label className="text-sm font-medium text-gray-700">Volume(%):</label>
               <Input
                 type="number"
-                value={volume}
-                onChange={(e) => setVolume(e.target.value)}
+                value={settings.volume}
+                onChange={(e) => updateSetting('volume', e.target.value)}
                 className="w-full"
               />
             </div>
@@ -269,15 +316,15 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
               <div className="flex items-center space-x-2">
                 <Input
                   type="number"
-                  value={logoX}
-                  onChange={(e) => setLogoX(e.target.value)}
+                  value={settings.logoX}
+                  onChange={(e) => updateSetting('logoX', e.target.value)}
                   className="w-16"
                   placeholder="X"
                 />
                 <Input
                   type="number"
-                  value={logoY}
-                  onChange={(e) => setLogoY(e.target.value)}
+                  value={settings.logoY}
+                  onChange={(e) => updateSetting('logoY', e.target.value)}
                   className="w-16"
                   placeholder="Y"
                 />
@@ -289,8 +336,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="flex items-center space-x-3">
             <Checkbox
               id="displayClock"
-              checked={displayClock}
-              onCheckedChange={(checked) => setDisplayClock(checked === true)}
+              checked={settings.displayClock}
+              onCheckedChange={(checked) => updateSetting('displayClock', checked === true)}
             />
             <label htmlFor="displayClock" className="text-sm font-medium text-gray-700">Display Clock</label>
           </div>
@@ -299,7 +346,7 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Fit image:</label>
-              <RadioGroup value={fitImage} onValueChange={setFitImage} className="space-y-2">
+              <RadioGroup value={settings.fitImage} onValueChange={(value) => updateSetting('fitImage', value)} className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="actual" id="actual" />
                   <label htmlFor="actual" className="text-sm text-gray-700">Actual</label>
@@ -316,7 +363,7 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
             </div>
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">Fit video:</label>
-              <RadioGroup value={fitVideo} onValueChange={setFitVideo} className="space-y-2">
+              <RadioGroup value={settings.fitVideo} onValueChange={(value) => updateSetting('fitVideo', value)} className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="letterbox" id="video-letterbox" />
                   <label htmlFor="video-letterbox" className="text-sm text-gray-700">Letterbox</label>
@@ -336,16 +383,16 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
               <div className="flex items-center space-x-3">
                 <Checkbox
                   id="reloadUrls"
-                  checked={reloadUrls}
-                  onCheckedChange={(checked) => setReloadUrls(checked === true)}
+                  checked={settings.reloadUrls}
+                  onCheckedChange={(checked) => updateSetting('reloadUrls', checked === true)}
                 />
                 <label htmlFor="reloadUrls" className="text-sm text-gray-700">Reload link URLs each time</label>
               </div>
               <div className="flex items-center space-x-3">
                 <Checkbox
                   id="keepWebpages"
-                  checked={keepWebpages}
-                  onCheckedChange={(checked) => setKeepWebpages(checked === true)}
+                  checked={settings.keepWebpages}
+                  onCheckedChange={(checked) => updateSetting('keepWebpages', checked === true)}
                 />
                 <label htmlFor="keepWebpages" className="text-sm text-gray-700">Keep webpages in memory</label>
               </div>
@@ -359,8 +406,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
               <span className="text-sm text-gray-700">Stop video after every</span>
               <Input
                 type="number"
-                value={breakVideo}
-                onChange={(e) => setBreakVideo(e.target.value)}
+                value={settings.breakVideo}
+                onChange={(e) => updateSetting('breakVideo', e.target.value)}
                 className="w-20"
               />
               <span className="text-sm text-gray-700">seconds (0 to disable) to show adverts</span>
@@ -372,8 +419,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
             <div className="flex items-center space-x-3">
               <Checkbox
                 id="scheduleDisplayOff"
-                checked={scheduleDisplayOff}
-                onCheckedChange={(checked) => setScheduleDisplayOff(checked === true)}
+                checked={settings.scheduleDisplayOff}
+                onCheckedChange={(checked) => updateSetting('scheduleDisplayOff', checked === true)}
               />
               <label htmlFor="scheduleDisplayOff" className="text-sm font-medium text-gray-700">Schedule Display OFF</label>
             </div>
@@ -386,8 +433,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="flex items-center space-x-3">
             <Checkbox
               id="dailyReboot"
-              checked={dailyReboot}
-              onCheckedChange={(checked) => setDailyReboot(checked === true)}
+              checked={settings.dailyReboot}
+              onCheckedChange={(checked) => updateSetting('dailyReboot', checked === true)}
             />
             <label htmlFor="dailyReboot" className="text-sm font-medium text-gray-700">Optional daily reboot</label>
           </div>
@@ -396,8 +443,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           <div className="flex items-center space-x-3">
             <Checkbox
               id="kioskMenu"
-              checked={kioskMenu}
-              onCheckedChange={(checked) => setKioskMenu(checked === true)}
+              checked={settings.kioskMenu}
+              onCheckedChange={(checked) => updateSetting('kioskMenu', checked === true)}
             />
             <label htmlFor="kioskMenu" className="text-sm font-medium text-gray-700">Kiosk Menu</label>
           </div>
@@ -405,24 +452,24 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
           {/* Video Play */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-gray-700">Video Play:</label>
-            <RadioGroup value={videoPlayer} onValueChange={setVideoPlayer} className="space-y-2">
+            <RadioGroup value={settings.videoPlayer} onValueChange={(value) => updateSetting('videoPlayer', value)} className="space-y-2">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="default" id="default-player" />
-                                   <label htmlFor="default-player" className="text-sm text-gray-700">
-                     Default (omxplayer in versions less than 4, chromium in versions &gt;= 4.x.x)
-                   </label>
-                 </div>
-                 <div className="flex items-center space-x-2">
-                   <RadioGroupItem value="mpv" id="mpv-player" />
-                   <label htmlFor="mpv-player" className="text-sm text-gray-700">
-                     MPV (for avoiding gap between videos, certain YouTube streaming)
-                   </label>
-                 </div>
-                 <div className="flex items-center space-x-2">
-                   <RadioGroupItem value="vlc" id="vlc-player" />
-                   <label htmlFor="vlc-player" className="text-sm text-gray-700">
-                     VLC(Experimental) (for 4K support in versions &gt;= 4.x.x for Raspberry Pi)
-                   </label>
+                <label htmlFor="default-player" className="text-sm text-gray-700">
+                  Default (omxplayer in versions less than 4, chromium in versions &gt;= 4.x.x)
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="mpv" id="mpv-player" />
+                <label htmlFor="mpv-player" className="text-sm text-gray-700">
+                  MPV (for avoiding gap between videos, certain YouTube streaming)
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="vlc" id="vlc-player" />
+                <label htmlFor="vlc-player" className="text-sm text-gray-700">
+                  VLC(Experimental) (for 4K support in versions &gt;= 4.x.x for Raspberry Pi)
+                </label>
               </div>
             </RadioGroup>
           </div>
@@ -435,16 +482,16 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="disableWifiAP"
-                    checked={disableWifiAP}
-                    onCheckedChange={(checked) => setDisableWifiAP(checked === true)}
+                    checked={settings.disableWifiAP}
+                    onCheckedChange={(checked) => updateSetting('disableWifiAP', checked === true)}
                   />
                   <label htmlFor="disableWifiAP" className="text-sm text-gray-700">Disable player wifi AP</label>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="disableWebUI"
-                    checked={disableWebUI}
-                    onCheckedChange={(checked) => setDisableWebUI(checked === true)}
+                    checked={settings.disableWebUI}
+                    onCheckedChange={(checked) => updateSetting('disableWebUI', checked === true)}
                   />
                   <label htmlFor="disableWebUI" className="text-sm text-gray-700">Disable player webUI</label>
                 </div>
@@ -453,8 +500,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="disablePowerWarning"
-                    checked={disablePowerWarning}
-                    onCheckedChange={(checked) => setDisablePowerWarning(checked === true)}
+                    checked={settings.disablePowerWarning}
+                    onCheckedChange={(checked) => updateSetting('disablePowerWarning', checked === true)}
                   />
                   <label htmlFor="disablePowerWarning" className="text-sm text-red-600">
                     Disable player power/temperature warning
@@ -464,8 +511,8 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="enableGPIO"
-                    checked={enableGPIO}
-                    onCheckedChange={(checked) => setEnableGPIO(checked === true)}
+                    checked={settings.enableGPIO}
+                    onCheckedChange={(checked) => updateSetting('enableGPIO', checked === true)}
                   />
                   <label htmlFor="enableGPIO" className="text-sm text-gray-700">Enable GPIO media control (17,18,27)</label>
                 </div>

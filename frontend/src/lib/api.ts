@@ -320,4 +320,25 @@ export const groupAPI = {
   },
 };
 
+// Settings API functions
+export const settingsAPI = {
+  // Get all settings
+  getSettings: async () => {
+    const response = await api.get('/api/settings/');
+    return response.data;
+  },
+
+  // Update a single setting
+  updateSetting: async (key: string, value: any) => {
+    const response = await api.post('/api/settings/', { [key]: value });
+    return response.data;
+  },
+
+  // Update multiple settings
+  updateSettings: async (settings: Record<string, any>) => {
+    const response = await api.post('/api/settings/', settings);
+    return response.data;
+  },
+};
+
 export default api; 

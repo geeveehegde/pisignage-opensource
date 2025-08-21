@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import SidebarComponent from './Sidebar';
+import Topbar from './Topbar';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
@@ -32,7 +33,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen w-full bg-gray-50">
         {/* Desktop Sidebar */}
         <div className="hidden md:flex md:w-64 md:flex-col">
           <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 overflow-y-auto">
@@ -42,6 +43,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
         {/* Main content */}
         <SidebarInset>
+          {/* Topbar - visible on all screen sizes */}
+          <Topbar />
+          
           {/* Mobile header */}
           <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
             <div className="flex items-center justify-between">

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
 
 // Create axios instance with credentials
 const api = axios.create({
@@ -87,6 +87,18 @@ export const assetAPI = {
     return response.data;
   },
 
+  // Get files from /api/files endpoint
+  getFiles: async () => {
+    const response = await api.get('/api/files');
+    return response.data;
+  },
+
+  // Update file data (validity, rename, etc.)
+  updateFile: async (filename: string, data: any) => {
+    const response = await api.post(`/api/files/${filename}`, data);
+    return response.data;
+  },
+
   // Get single asset by filename
   getAsset: async (filename: string) => {
     const response = await api.get(`/api/assets/file/${filename}`);
@@ -108,6 +120,12 @@ export const assetAPI = {
   // Delete asset
   deleteAsset: async (filename: string) => {
     const response = await api.delete(`/api/assets/file/${filename}`);
+    return response.data;
+  },
+
+  // Delete file from /api/files endpoint
+  deleteFile: async (filename: string) => {
+    const response = await api.delete(`/api/files/${filename}`);
     return response.data;
   },
 

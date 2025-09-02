@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { assetAPI, API_BASE_URL } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ArrowLeft, Download, Eye, Edit, Save } from 'lucide-react';
 
 export default function AssetDetailsPage() {
@@ -12,6 +13,18 @@ export default function AssetDetailsPage() {
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedLinkData, setEditedLinkData] = useState<{
+    link: string;
+    zoom: number;
+    duration: number | null;
+    hideTitle: string;
+  }>({
+    link: '',
+    zoom: 1,
+    duration: null,
+    hideTitle: 'title'
+  });
 
   useEffect(() => {
     const fetchAssetDetails = async () => {
@@ -19,16 +32,44 @@ export default function AssetDetailsPage() {
         setLoading(true);
         setError(null);
         
-        // Get asset details from the API
-        const response = await assetAPI.getFiles();
-        const assetData = response.data.dbdata.find((item: any) => item.name === filename);
-        
+        // First, get basic asset info from files API
+        const filesResponse = await assetAPI.getFiles();
+        const assetData = filesResponse.data.dbdata.find((item: any) => item.name === filename);
+        console.log('Asset data:', assetData);
         if (assetData) {
-          setAsset({
-            ...assetData,
+          let detailedAssetData = assetData;
+          
+          // If it's a link asset, get detailed information from links API
+          if (assetData.type === '.link') {
+            try {
+              const linkResponse = await assetAPI.getLinkDetails(filename);
+              detailedAssetData = {
+                ...assetData,
+                ...linkResponse,
+                details: linkResponse.details || linkResponse
+              };
+            } catch (linkError) {
+              console.warn('Could not fetch link details, using basic asset data:', linkError);
+            }
+          }
+          
+          const assetWithUrl = {
+            ...detailedAssetData,
             name: filename,
             url: `/media/${filename}`
-          });
+          };
+          setAsset(assetWithUrl);
+          
+          // Initialize link editing data if it's a link asset
+          if (detailedAssetData.type === '.link') {
+            const details = detailedAssetData.details || detailedAssetData;
+            setEditedLinkData({
+              link: details.link || '',
+              zoom: details.zoom || 1,
+              duration: details.duration || null,
+              hideTitle: details.hideTitle || 'title'
+            });
+          }
         } else {
           setError('Asset not found');
         }
@@ -56,6 +97,42 @@ export default function AssetDetailsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleEditToggle = () => {
+    setIsEditing(!isEditing);
+  };
+
+  const handleSaveLinkConfiguration = async () => {
+    try {
+      // Update the link configuration
+      const payload = {
+        categories: asset.categories || [],
+        details: {
+          name: asset.name,
+          type: asset.type,
+          link: editedLinkData.link,
+          zoom: editedLinkData.zoom,
+          duration: editedLinkData.duration,
+          hideTitle: editedLinkData.hideTitle
+        }
+      };
+
+      // Use the existing API endpoint to update link details
+      const response = await assetAPI.updateFile(filename, payload);
+      console.log('Link configuration updated:', response);
+
+      // Update local asset state
+      setAsset({
+        ...asset,
+        details: payload.details
+      });
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating link configuration:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   if (loading) {
@@ -89,6 +166,7 @@ export default function AssetDetailsPage() {
   }
 
   const isImage = asset.type && asset.type.toLowerCase().includes('image');
+  const isLink = asset.type === '.link';
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -101,14 +179,27 @@ export default function AssetDetailsPage() {
           </Button>
           
           <div className="flex items-center space-x-3">
-            <Button onClick={handleDownload} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
-            <Button variant="default">
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
+            {!isLink && (
+              <Button onClick={handleDownload} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            )}
+            {isLink && (
+              <>
+                {isEditing ? (
+                  <Button onClick={handleSaveLinkConfiguration} variant="default">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Configuration
+                  </Button>
+                ) : (
+                  <Button onClick={handleEditToggle} variant="outline">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Configuration
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -131,6 +222,91 @@ export default function AssetDetailsPage() {
                       setError('Failed to load image');
                     }}
                   />
+                </div>
+              )}
+
+              {/* Link Configuration for Link Assets */}
+              {isLink && (
+                <div className="mb-6 bg-blue-50 rounded-lg p-6 border border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Link Configuration</h3>
+                  
+                  <div className="space-y-4">
+                    {/* Link URL */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Link URL</label>
+                      {isEditing ? (
+                        <Input
+                          type="url"
+                          value={editedLinkData.link}
+                          onChange={(e) => setEditedLinkData({ ...editedLinkData, link: e.target.value })}
+                          placeholder="https://example.com"
+                          className="w-full"
+                        />
+                      ) : (
+                        <p className="text-gray-900 bg-white px-3 py-2 rounded border">
+                          {asset.details?.link || 'No link specified'}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Zoom Level */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Zoom Level</label>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min="0.1"
+                          max="3"
+                          step="0.1"
+                          value={editedLinkData.zoom}
+                          onChange={(e) => setEditedLinkData({ ...editedLinkData, zoom: parseFloat(e.target.value) || 1 })}
+                          className="w-32"
+                        />
+                      ) : (
+                        <p className="text-gray-900 bg-white px-3 py-2 rounded border w-32">
+                          {asset.details?.zoom || 1}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Duration */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Duration (seconds)</label>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editedLinkData.duration || ''}
+                          onChange={(e) => setEditedLinkData({ ...editedLinkData, duration: e.target.value ? parseInt(e.target.value) : null })}
+                          placeholder="Leave empty for no limit"
+                          className="w-48"
+                        />
+                      ) : (
+                        <p className="text-gray-900 bg-white px-3 py-2 rounded border w-48">
+                          {asset.details?.duration || 'No limit'}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Hide Title */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Hide Title</label>
+                      {isEditing ? (
+                        <select
+                          value={editedLinkData.hideTitle}
+                          onChange={(e) => setEditedLinkData({ ...editedLinkData, hideTitle: e.target.value })}
+                          className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="title">Title</option>
+                          <option value="none">None</option>
+                        </select>
+                      ) : (
+                        <p className="text-gray-900 bg-white px-3 py-2 rounded border w-32">
+                          {asset.details?.hideTitle || 'title'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 

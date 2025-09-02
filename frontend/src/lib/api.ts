@@ -129,13 +129,63 @@ export const assetAPI = {
     return response.data;
   },
 
-  // Upload asset
-  uploadAsset: async (formData: FormData) => {
-    const response = await api.post('/api/assets/upload', formData, {
+  // Upload files to /api/files
+  uploadFiles: async (formData: FormData) => {
+    const response = await api.post('/api/files', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  },
+
+  // Post upload metadata
+  postUpload: async (data: { files: Array<{ name: string; size: number; type: string; }>; categories: string[]; }) => {
+    const response = await api.post('/api/postupload', data);
+    return response.data;
+  },
+
+  // Create link file
+  createLink: async (linkData: { fileName: string; fileType: string; linkAddress: string }) => {
+    // Map file types to their corresponding extensions
+    const getTypeFromFileType = (fileType: string) => {
+      switch (fileType) {
+        case 'Message':
+          return '.txt';
+        case 'Local Folder/File':
+          return '.local';
+        case 'Media RSS':
+          return '.rss';
+        case 'Streaming':
+        case 'Audio Streaming':
+        case 'Livestreaming or YouTube':
+          return '.stream';
+        case 'Web link (shown in iframe)':
+        case 'Web page (supports cross origin links)':
+        default:
+          return '.link';
+      }
+    };
+
+    const payload = {
+      categories: [],
+      details: {
+        name: linkData.fileName,
+        type: getTypeFromFileType(linkData.fileType),
+        link: linkData.linkAddress,
+        zoom: 1,
+        duration: null,
+        hideTitle: "title"
+      },
+    };
+    
+    const response = await api.post('/api/links', payload);
+    return response.data;
+  },
+
+  // Get link file details
+  getLinkDetails: async (filename: string) => {
+    const response = await api.get(`/api/links/${filename}`);
     return response.data;
   },
 

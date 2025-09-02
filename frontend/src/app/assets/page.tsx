@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { assetAPI } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/api';
+import { assetAPI, API_BASE_URL } from '@/lib/api';
 import {
   Table,
   TableBody,
@@ -16,6 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Upload } from 'lucide-react';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -23,6 +28,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import ValidityDialog from './components/ValidityDialog';
+import UploadStatusDialog from './components/UploadStatusDialog';
+import AddLinkDialog from './components/AddLinkDialog';
 
 export default function AssetsPage() {
   const router = useRouter();
@@ -35,6 +42,13 @@ export default function AssetsPage() {
   const [deleting, setDeleting] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [editedName, setEditedName] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'uploading' | 'complete' | 'error' | 'processing'>('uploading');
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; size: number; type: string; }>>([]);
+  const [addLinkDialogOpen, setAddLinkDialogOpen] = useState(false);
+  const [preselectedFileType, setPreselectedFileType] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -175,14 +189,166 @@ export default function AssetsPage() {
     // Implement save logic here
   };
 
+  const handleUploadFiles = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '*/*'; // Accept all file types, you can restrict to specific types if needed
+    
+    input.onchange = async (event) => {
+      const target = event.target as HTMLInputElement;
+      const files = target.files;
+      
+      if (!files || files.length === 0) return;
+      
+      // Show upload dialog
+      setUploadDialogOpen(true);
+      setUploadProgress(0);
+      setUploadStatus('uploading');
+      setUploading(true);
+      
+      // Get file metadata for display and API call
+      const fileMetadata = Array.from(files).map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type
+      }));
+      setUploadedFiles(fileMetadata);
+      
+      try {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+          formData.append('assets', files[i]);
+        }
+        
+        // Use XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(progress);
+          }
+        };
+        
+        xhr.onload = async () => {
+          if (xhr.status === 200) {
+            setUploadStatus('complete');
+            // Refresh the files list after successful upload
+            const refreshResponse = await assetAPI.getFiles();
+            setFilesData(refreshResponse.data);
+            console.log('Files uploaded successfully');
+          } else {
+            setUploadStatus('error');
+            console.error('Upload failed with status:', xhr.status);
+          }
+          setUploading(false);
+        };
+        
+        xhr.onerror = () => {
+          setUploadStatus('error');
+          setUploading(false);
+          console.error('Upload failed');
+        };
+        
+        xhr.open('POST', `${API_BASE_URL}/api/files`);
+        xhr.withCredentials = true;
+        xhr.send(formData);
+        
+      } catch (error) {
+        console.error('Error uploading files:', error);
+        setUploadStatus('error');
+        setUploading(false);
+      }
+    };
+    
+    input.click();
+  };
+
+  const handleContinueAfterUpload = async (categories: string[]) => {
+    try {
+      // Make POST request to /api/postupload
+      const payload = {
+        files: uploadedFiles,
+        categories: categories
+      };
+      
+      const response = await assetAPI.postUpload(payload);
+      console.log('Post upload response:', response);
+      
+      // Show processing status after successful POST request
+      setUploadStatus('processing');
+      
+    } catch (error) {
+      console.error('Error in post upload:', error);
+      setUploadStatus('error');
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setUploadDialogOpen(open);
+    if (!open) {
+      // Reset states when dialog is closed
+      setUploadedFiles([]);
+      setUploadProgress(0);
+      setUploadStatus('uploading');
+    }
+  };
+
+  const handleOpenAddDialog = (fileType: string) => {
+    setPreselectedFileType(fileType);
+    setAddLinkDialogOpen(true);
+  };
+
+  const handleSaveLink = async (linkData: { fileName: string; fileType: string; linkAddress: string }) => {
+    try {
+      const response = await assetAPI.createLink(linkData);
+      console.log('Link created successfully:', response);
+      
+      // Refresh the files list after successful link creation
+      const refreshResponse = await assetAPI.getFiles();
+      setFilesData(refreshResponse.data);
+      
+      // Close the dialog and reset preselected type
+      setAddLinkDialogOpen(false);
+      setPreselectedFileType(null);
+    } catch (error) {
+      console.error('Error creating link:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleCloseAddDialog = () => {
+    setAddLinkDialogOpen(false);
+    setPreselectedFileType(null);
+  };
+
   return (
     <div className="w-full h-full">
       <div className="flex items-center justify-between mb-6 p-6">
         <h1 className="text-2xl font-bold">Assets</h1>
-        <Button className="flex items-center space-x-2">
-          <Upload className="w-4 h-4" />
-          Upload Asset
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="flex items-center space-x-2">
+              <Upload className="w-4 h-4" />
+              Upload Asset
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={handleUploadFiles} disabled={uploading}>
+              {uploading ? 'Uploading...' : 'Upload Files'}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setAddLinkDialogOpen(true)}>
+              Add a link
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleOpenAddDialog('Message')}>
+              Add a message
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleOpenAddDialog('Local Folder/File')}>
+              Add local Folder/Files
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       {loading ? (
@@ -372,6 +538,24 @@ export default function AssetsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upload Status Dialog */}
+      <UploadStatusDialog
+        open={uploadDialogOpen}
+        onOpenChange={handleDialogClose}
+        uploadProgress={uploadProgress}
+        uploadStatus={uploadStatus}
+        uploadedFiles={uploadedFiles}
+        onContinue={handleContinueAfterUpload}
+      />
+
+      {/* Add Link Dialog */}
+      <AddLinkDialog
+        open={addLinkDialogOpen}
+        onOpenChange={handleCloseAddDialog}
+        onSave={handleSaveLink}
+        preselectedFileType={preselectedFileType}
+      />
     </div>
   );
 } 

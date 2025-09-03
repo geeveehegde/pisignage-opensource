@@ -1,15 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { assetAPI, API_BASE_URL } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Download, Eye, Edit, Save } from 'lucide-react';
 
-export default function AssetDetailsPage() {
-  const params = useParams();
-  const filename = decodeURIComponent(params.file as string);
+interface AssetDetailsPageProps {
+  params: Promise<{
+    file: string;
+  }>;
+}
+
+export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
+  const router = useRouter();
+  const resolvedParams = use(params);
+  const filename = decodeURIComponent(resolvedParams.file);
   const [asset, setAsset] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

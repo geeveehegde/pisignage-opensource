@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { UploadStatusDialogProps } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,14 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 
-interface UploadStatusDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  uploadProgress: number;
-  uploadStatus: 'uploading' | 'complete' | 'error' | 'processing';
-  uploadedFiles: Array<{ name: string; size: number; type: string; }>;
-  onContinue: (categories: string[]) => void;
-}
+
 
 export default function UploadStatusDialog({
   open,

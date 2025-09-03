@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,7 +11,6 @@ import { CogIcon } from '@heroicons/react/24/outline';
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger?: React.ReactNode;
 }
 
 interface Settings {
@@ -48,7 +47,7 @@ interface Settings {
   enableGPIO: boolean;
 }
 
-export default function SettingsDialog({ open, onOpenChange, trigger }: SettingsDialogProps) {
+export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [settings, setSettings] = useState<Settings>({
     // Display settings
     resolution: 'auto',
@@ -137,14 +136,6 @@ export default function SettingsDialog({ open, onOpenChange, trigger }: Settings
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="default" size="sm" className="flex items-center space-x-2">
-            <CogIcon className="h-4 w-4" />
-            <span>Settings</span>
-          </Button>
-        )}
-      </DialogTrigger>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Select Display Orientation and Resolution</DialogTitle>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,10 +11,9 @@ import { TagIcon } from '@heroicons/react/24/outline';
 interface TickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger?: React.ReactNode;
 }
 
-export default function TickerDialog({ open, onOpenChange, trigger }: TickerDialogProps) {
+export default function TickerDialog({ open, onOpenChange }: TickerDialogProps) {
   // Ticker state
   const [tickerShow, setTickerShow] = useState(true);
   const [showAssetText, setShowAssetText] = useState(false);
@@ -58,14 +57,6 @@ export default function TickerDialog({ open, onOpenChange, trigger }: TickerDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm" className="flex items-center space-x-2">
-            <TagIcon className="h-4 w-4" />
-            <span>Set Group Ticker</span>
-          </Button>
-        )}
-      </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Ticker for the Play-list</DialogTitle>

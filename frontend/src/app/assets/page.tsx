@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { assetAPI, API_BASE_URL } from '@/lib/api';
+import type { Asset, UploadFile, PostUploadData, CreateLinkData } from './lib/types';
 import {
   Table,
   TableBody,
@@ -46,7 +47,7 @@ export default function AssetsPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'uploading' | 'complete' | 'error' | 'processing'>('uploading');
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; size: number; type: string; }>>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
   const [addLinkDialogOpen, setAddLinkDialogOpen] = useState(false);
   const [preselectedFileType, setPreselectedFileType] = useState<string | null>(null);
 
@@ -300,7 +301,7 @@ export default function AssetsPage() {
     setAddLinkDialogOpen(true);
   };
 
-  const handleSaveLink = async (linkData: { fileName: string; fileType: string; linkAddress: string }) => {
+  const handleSaveLink = async (linkData: CreateLinkData) => {
     try {
       const response = await assetAPI.createLink(linkData);
       console.log('Link created successfully:', response);

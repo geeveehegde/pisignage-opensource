@@ -4,19 +4,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { playlistAPI } from '@/lib/api';
-import type { Playlist } from './lib/types';
+import { groupAPI } from '@/lib/api';
+import type { Group } from './lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Settings, Users, Play, Calendar, Trash2, Copy } from 'lucide-react';
 
-export default function PlaylistsPage() {
+export default function GroupsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newGroupName, setNewGroupName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
   // Temporarily bypass authentication
@@ -29,35 +29,35 @@ export default function PlaylistsPage() {
   useEffect(() => {
     // Temporarily bypass authentication check
     // if (user) {
-      fetchPlaylists();
+      fetchGroups();
     // }
   }, []); // Removed user dependency
 
-  const fetchPlaylists = async () => {
+  const fetchGroups = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await playlistAPI.getPlaylists();
-      const playlistsData = response.data || [];
-      setPlaylists(playlistsData);
+      const response = await groupAPI.getGroups();
+      const groupsData = response.data || [];
+      setGroups(groupsData);
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to fetch playlists');
+      setError(error.response?.data?.message || 'Failed to fetch groups');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreatePlaylist = async () => {
-    if (!newPlaylistName.trim()) return;
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
     
     try {
       setIsCreating(true);
       setError(null);
-      await playlistAPI.createPlaylist(newPlaylistName.trim());
-      setNewPlaylistName('');
-      await fetchPlaylists(); // Refresh the list
+      await groupAPI.createGroup({ name: newGroupName.trim() });
+      setNewGroupName('');
+      await fetchGroups(); // Refresh the list
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to create playlist');
+      setError(error.response?.data?.message || 'Failed to create group');
     } finally {
       setIsCreating(false);
     }
@@ -65,11 +65,9 @@ export default function PlaylistsPage() {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleCreatePlaylist();
+      handleCreateGroup();
     }
   };
-
-
 
   // Temporarily bypass authentication checks
   // if (loading) {
@@ -93,7 +91,7 @@ export default function PlaylistsPage() {
           {/* Page Header */}
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Available Playlists</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Available Groups</h1>
             </div>
             <div className="flex space-x-3">
               <Button variant="default" size="sm">
@@ -133,7 +131,7 @@ export default function PlaylistsPage() {
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <p className="text-red-800">{error}</p>
               <Button
-                onClick={fetchPlaylists}
+                onClick={fetchGroups}
                 variant="link"
                 size="sm"
                 className="mt-2 text-red-600 hover:text-red-800 p-0 h-auto"
@@ -143,21 +141,21 @@ export default function PlaylistsPage() {
             </div>
           )}
 
-          {/* Add New Playlist */}
+          {/* Add New Group */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="Add a new playlist"
-                value={newPlaylistName}
-                onChange={(e) => setNewPlaylistName(e.target.value)}
+                placeholder="Add a new group"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={isCreating}
                 className="flex-1"
               />
               <Button 
-                onClick={handleCreatePlaylist}
-                disabled={isCreating || !newPlaylistName.trim()}
+                onClick={handleCreateGroup}
+                disabled={isCreating || !newGroupName.trim()}
                 variant="default"
                 >
                 {isCreating ? 'ADDING...' : 'ADD'}
@@ -171,75 +169,80 @@ export default function PlaylistsPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            /* Playlists List */
+            /* Groups List */
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {!Array.isArray(playlists) || playlists.length === 0 ? (
+              {!Array.isArray(groups) || groups.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">🎵</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No playlists found</h3>
-                  <p className="text-gray-500 mb-4">Get started by creating your first playlist</p>
+                  <div className="text-gray-400 text-6xl mb-4">👥</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No groups found</h3>
+                  <p className="text-gray-500 mb-4">Get started by creating your first group</p>
                   <Button variant="default">
-                    Create Your First Playlist
+                    Create Your First Group
                   </Button>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {playlists.map((playlist, index) => (
+                  {groups.map((group, index) => (
                     <div
-                      key={playlist.name}
+                      key={group._id}
                       className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       }`}
                     >
-                      {/* Playlist Info */}
+                      {/* Group Info */}
                       <div className="flex items-center space-x-4 flex-1">
                         <div className="flex-shrink-0">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <Link href={`/playlists/${encodeURIComponent(playlist.name)}`}>
+                          <Link href={`/groups/${encodeURIComponent(group.name)}`}>
                             <h3 className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer truncate">
-                              {playlist.name}
+                              {group.name}
                             </h3>
                           </Link>
+                          {group.description && (
+                            <p className="text-xs text-gray-500 truncate mt-1">
+                              {group.description}
+                            </p>
+                          )}
                         </div>
                       </div>
 
-                      {/* Asset Count & Layout Info */}
+                      {/* Group Details */}
                       <div className="hidden sm:flex items-center space-x-8 flex-shrink-0">
                         <div className="text-sm text-gray-500">
-                          {playlist.assets?.length || 0} assets, layout: {playlist.layout || '1'}, {playlist.templateName || '10'} secs
+                          {group.assets?.length || 0} assets, {group.playlists?.length || 0} playlists
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {group.orientation || 'landscape'} • {group.resolution || 'auto'}
                         </div>
                       </div>
 
                       {/* Action Buttons */}
                       <div className="flex items-center space-x-2 ml-4">
-                        {/* Schedule Icon */}
-                        <Button variant="ghost" size="sm" className="p-2 text-blue-500 hover:text-blue-700" title="Schedule">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
+                        {/* Settings Icon */}
+                        <Button variant="ghost" size="sm" className="p-2 text-blue-500 hover:text-blue-700" title="Settings">
+                          <Settings className="w-4 h-4" />
                         </Button>
 
                         {/* Deploy Icon */}
                         <Button variant="ghost" size="sm" className="p-2 text-blue-500 hover:text-blue-700" title="Deploy">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                          </svg>
+                          <Play className="w-4 h-4" />
+                        </Button>
+
+                        {/* Schedule Icon */}
+                        <Button variant="ghost" size="sm" className="p-2 text-blue-500 hover:text-blue-700" title="Schedule">
+                          <Calendar className="w-4 h-4" />
                         </Button>
 
                         {/* Delete Icon */}
                         <Button variant="ghost" size="sm" className="p-2 text-red-500 hover:text-red-700" title="Delete">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          <Trash2 className="w-4 h-4" />
                         </Button>
 
                         {/* Copy Icon */}
                         <Button variant="ghost" size="sm" className="p-2 text-gray-500 hover:text-gray-700" title="Copy">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
+                          <Copy className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>

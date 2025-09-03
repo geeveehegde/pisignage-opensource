@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,10 +11,9 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 interface EmergencyMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger?: React.ReactNode;
 }
 
-export default function EmergencyMessageDialog({ open, onOpenChange, trigger }: EmergencyMessageDialogProps) {
+export default function EmergencyMessageDialog({ open, onOpenChange }: EmergencyMessageDialogProps) {
   // Emergency message state
   const [emergencyMessage, setEmergencyMessage] = useState('');
   const [emergencyMessageEnabled, setEmergencyMessageEnabled] = useState(true);
@@ -32,14 +31,6 @@ export default function EmergencyMessageDialog({ open, onOpenChange, trigger }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm" className="flex items-center space-x-2">
-            <ExclamationTriangleIcon className="h-4 w-4" />
-            <span>Emergency Message</span>
-          </Button>
-        )}
-      </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Display a text message in front of the Signage</DialogTitle>

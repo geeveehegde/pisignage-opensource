@@ -10,6 +10,7 @@ import {
   QueueListIcon,
   CogIcon,
   ArrowRightOnRectangleIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import {
   Sidebar,
@@ -36,9 +37,14 @@ const navigationItems = [
     icon: PhotoIcon,
   },
   {
+    name: 'Groups',
+    href: '/groups',
+    icon: ComputerDesktopIcon,
+  },
+  {
     name: 'Players',
     href: '/players',
-    icon: ComputerDesktopIcon,
+    icon: UserGroupIcon,
   },
   {
     name: 'Playlists',

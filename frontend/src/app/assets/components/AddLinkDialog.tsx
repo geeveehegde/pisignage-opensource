@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { AddLinkDialogProps } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,12 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface AddLinkDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (linkData: { fileName: string; fileType: string; linkAddress: string }) => void;
-  preselectedFileType?: string | null;
-}
+
 
 export default function AddLinkDialog({
   open,

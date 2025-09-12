@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { assetAPI, API_BASE_URL } from '@/lib/api';
 import type { Asset, UploadFile, PostUploadData, CreateLinkData } from './lib/types';
@@ -28,9 +28,285 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import ValidityDialog from './components/ValidityDialog';
-import UploadStatusDialog from './components/UploadStatusDialog';
-import AddLinkDialog from './components/AddLinkDialog';
+// Lazy load dialog components
+const ValidityDialog = lazy(() => import('./components/ValidityDialog'));
+const UploadStatusDialog = lazy(() => import('./components/UploadStatusDialog'));
+const AddLinkDialog = lazy(() => import('./components/AddLinkDialog'));
+
+// Memoized Thumbnail Component
+const AssetThumbnail = memo(({ 
+  thumbnail, 
+  name, 
+  onClick 
+}: { 
+  thumbnail?: string; 
+  name: string; 
+  onClick: () => void; 
+}) => {
+  return (
+    <div 
+      onClick={onClick}
+      className="cursor-pointer hover:opacity-80 transition-opacity"
+    >
+      {thumbnail ? (
+        <img 
+          src={`${API_BASE_URL}${thumbnail}`}
+          alt={name}
+          loading="lazy"
+          className="w-16 h-16 object-cover rounded-lg"
+        />
+      ) : (
+        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+AssetThumbnail.displayName = 'AssetThumbnail';
+
+// Memoized Asset Info Component
+const AssetInfo = memo(({ 
+  asset, 
+  isEditing, 
+  editedName, 
+  onNameChange, 
+  onSave, 
+  onCancel, 
+  onClick 
+}: {
+  asset: any;
+  isEditing: boolean;
+  editedName: string;
+  onNameChange: (name: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onClick: () => void;
+}) => {
+  if (isEditing) {
+    return (
+      <div className="flex items-center space-x-2">
+        <Input
+          type="text"
+          value={editedName}
+          onChange={(e) => onNameChange(e.target.value)}
+          className="font-medium text-gray-900"
+          autoFocus
+        />
+        <Button
+          onClick={onSave}
+          size="sm"
+          variant="default"
+        >
+          Save
+        </Button>
+        <Button
+          onClick={onCancel}
+          size="sm"
+          variant="outline"
+        >
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <>
+      <div 
+        onClick={onClick}
+        className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+      >
+        {asset.name}
+      </div>
+      <div className="text-sm text-gray-600">
+        {asset.resolution ? `${asset.resolution.width}x${asset.resolution.height}` : 'Unknown resolution'}
+      </div>
+      <div className="text-sm text-gray-500">
+        {asset.type}, {asset.size}, {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+      </div>
+      {asset.playlists && asset.playlists.length > 0 && (
+        <div className="flex items-center space-x-2 mt-1">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <span className="text-xs text-blue-600 font-medium">
+            Playlists: {asset.playlists.join(', ')}
+          </span>
+        </div>
+      )}
+    </>
+  );
+});
+
+AssetInfo.displayName = 'AssetInfo';
+
+// Memoized Asset Actions Component
+const AssetActions = memo(({ 
+  asset, 
+  onView, 
+  onEdit, 
+  onDelete, 
+  onValidityOpen 
+}: {
+  asset: any;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onValidityOpen: () => void;
+}) => {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center space-x-3">
+        <button 
+          onClick={onValidityOpen}
+          className="flex items-center space-x-1 text-blue-600 hover:text-blue-700"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-sm">add validity</span>
+        </button>
+        
+        <div className="flex items-center space-x-2">
+          <Button 
+            onClick={onView}
+            variant="ghost"
+            size="icon"
+            title="View Asset"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </Button>
+          <Button 
+            onClick={onEdit}
+            variant="ghost"
+            size="icon"
+            title="Edit Asset"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </Button>
+          <Button 
+            onClick={onDelete}
+            variant="ghost"
+            size="icon"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50" 
+            title="Delete Asset"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </Button>
+        </div>
+      </div>
+      
+      {asset.validity && asset.validity.enable && (
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-xs text-green-600 font-medium">
+            Valid: {new Date(asset.validity.startdate).toLocaleDateString()} - {new Date(asset.validity.enddate).toLocaleDateString()}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+});
+
+AssetActions.displayName = 'AssetActions';
+
+// Memoized Asset Row Component
+const AssetRow = memo(({ 
+  asset, 
+  editingAsset, 
+  editedName, 
+  onAssetClick, 
+  onEditAsset, 
+  onViewAsset, 
+  onDeleteAsset, 
+  onValidityOpen, 
+  onNameChange, 
+  onSaveAssetName, 
+  onCancelEdit 
+}: {
+  asset: any;
+  editingAsset: any;
+  editedName: string;
+  onAssetClick: (asset: any) => void;
+  onEditAsset: (asset: any) => void;
+  onViewAsset: (asset: any) => void;
+  onDeleteAsset: (asset: any) => void;
+  onValidityOpen: (asset: any) => void;
+  onNameChange: (name: string) => void;
+  onSaveAssetName: (asset: any) => void;
+  onCancelEdit: () => void;
+}) => {
+  const isEditing = editingAsset && editingAsset._id === asset._id;
+
+  const handleAssetClick = useCallback(() => onAssetClick(asset), [onAssetClick, asset]);
+  const handleEditAsset = useCallback(() => onEditAsset(asset), [onEditAsset, asset]);
+  const handleViewAsset = useCallback(() => onViewAsset(asset), [onViewAsset, asset]);
+  const handleDeleteAsset = useCallback(() => onDeleteAsset(asset), [onDeleteAsset, asset]);
+  const handleValidityOpen = useCallback(() => onValidityOpen(asset), [onValidityOpen, asset]);
+  const handleSaveAssetName = useCallback(() => onSaveAssetName(asset), [onSaveAssetName, asset]);
+
+  return (
+    <TableRow key={asset._id} className="border-b border-gray-200">
+      <TableCell className="py-4">
+        <div className="flex items-center space-x-4">
+          {/* Thumbnail */}
+          <AssetThumbnail
+            thumbnail={asset.thumbnail}
+            name={asset.name}
+            onClick={handleAssetClick}
+          />
+          
+          {/* File Information */}
+          <div className="flex-1">
+            <AssetInfo
+              asset={asset}
+              isEditing={isEditing}
+              editedName={editedName}
+              onNameChange={onNameChange}
+              onSave={handleSaveAssetName}
+              onCancel={onCancelEdit}
+              onClick={handleAssetClick}
+            />
+          </div>
+        </div>
+      </TableCell>
+      
+      {/* Actions */}
+      <TableCell>
+        <AssetActions
+          asset={asset}
+          onView={handleViewAsset}
+          onEdit={handleEditAsset}
+          onDelete={handleDeleteAsset}
+          onValidityOpen={handleValidityOpen}
+        />
+      </TableCell>
+      
+      {/* Checkbox */}
+      <TableCell>
+        <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+      </TableCell>
+    </TableRow>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function for optimal re-rendering
+  return (
+    prevProps.asset._id === nextProps.asset._id &&
+    prevProps.asset.name === nextProps.asset.name &&
+    prevProps.asset.validity === nextProps.asset.validity &&
+    prevProps.editingAsset?._id === nextProps.editingAsset?._id &&
+    prevProps.editedName === nextProps.editedName
+  );
+});
+
+AssetRow.displayName = 'AssetRow';
 
 export default function AssetsPage() {
   const router = useRouter();
@@ -68,48 +344,67 @@ export default function AssetsPage() {
     fetchFiles();
   }, []);
 
-  // Filter files that have corresponding dbdata
-  const filesWithDbData = filesData?.files?.filter((filename: string) => 
-    filesData.dbdata?.some((dbItem: any) => dbItem.name === filename)
-  ) || [];
+  // Memoized expensive calculations
+  const assetsWithData = useMemo(() => {
+    if (!filesData?.files || !filesData?.dbdata) return [];
+    
+    // Filter files that have corresponding dbdata
+    const filesWithDbData = filesData.files.filter((filename: string) => 
+      filesData.dbdata?.some((dbItem: any) => dbItem.name === filename)
+    );
 
-  // Map files to their corresponding dbdata
-  const assetsWithData = filesWithDbData.map((filename: string) => {
-    const dbItem = filesData.dbdata.find((item: any) => item.name === filename);
-    return {
-      _id: dbItem._id,
-      name: filename,
-      type: dbItem.type,
-      size: dbItem.size,
-      duration: dbItem.duration,
-      resolution: dbItem.resolution,
-      thumbnail: dbItem.thumbnail,
-      createdAt: dbItem.createdAt,
-      playlists: dbItem.playlists,
-      labels: dbItem.labels,
-      validity: dbItem.validity,
-      url: `/media/${filename}`,
-      fullPath: filename
-    };
-  });
+    // Map files to their corresponding dbdata
+    return filesWithDbData.map((filename: string) => {
+      const dbItem = filesData.dbdata.find((item: any) => item.name === filename);
+      return {
+        _id: dbItem._id,
+        name: filename,
+        type: dbItem.type,
+        size: dbItem.size,
+        duration: dbItem.duration,
+        resolution: dbItem.resolution,
+        thumbnail: dbItem.thumbnail,
+        createdAt: dbItem.createdAt,
+        playlists: dbItem.playlists,
+        labels: dbItem.labels,
+        validity: dbItem.validity,
+        url: `/media/${filename}`,
+        fullPath: filename
+      };
+    });
+  }, [filesData?.files, filesData?.dbdata]);
 
-  const handleViewAsset = (asset: any) => {
+  // Memoized event handlers
+  const handleViewAsset = useCallback((asset: any) => {
     router.push(`/assets/${encodeURIComponent(asset.name)}`);
-  };
+  }, [router]);
 
-  const handleEditAsset = (asset: any) => {
+  const handleEditAsset = useCallback((asset: any) => {
     setEditingAsset(asset);
     // Remove file extension for editing
     const nameWithoutExtension = asset.name.replace(/\.[^/.]+$/, '');
     setEditedName(nameWithoutExtension);
-  };
+  }, []);
 
-  const handleDeleteAsset = (asset: any) => {
+  const handleDeleteAsset = useCallback((asset: any) => {
     setAssetToDelete(asset);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaveAssetName = async (asset: any) => {
+  const handleAssetClick = useCallback((asset: any) => {
+    router.push(`/assets/${encodeURIComponent(asset.name)}`);
+  }, [router]);
+
+  const handleValidityOpen = useCallback((asset: any) => {
+    setSelectedAsset(asset);
+    setValidityDialogOpen(true);
+  }, []);
+
+  const handleNameChange = useCallback((name: string) => {
+    setEditedName(name);
+  }, []);
+
+  const handleSaveAssetName = useCallback(async (asset: any) => {
     try {
       // Get the file extension from the original name
       const fileExtension = asset.name.match(/\.[^/.]+$/)?.[0] || '';
@@ -140,16 +435,12 @@ export default function AssetsPage() {
       console.error('Error renaming asset:', error);
       // You might want to show an error message to the user here
     }
-  };
+  }, [editedName]);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditingAsset(null);
     setEditedName('');
-  };
-
-  const handleAssetClick = (asset: any) => {
-    router.push(`/assets/${encodeURIComponent(asset.name)}`);
-  };
+  }, []);
 
   const confirmDelete = async () => {
     if (!assetToDelete) return;
@@ -180,10 +471,6 @@ export default function AssetsPage() {
     }
   };
 
-  const openValidityDialog = (asset: any) => {
-    setSelectedAsset(asset);
-    setValidityDialogOpen(true);
-  };
 
   const saveValidity = (asset: any, validityData: any) => {
     console.log('Saving validity for:', asset.name, validityData);
@@ -359,151 +646,20 @@ export default function AssetsPage() {
           <Table className="w-full">
             <TableBody>
               {assetsWithData.map((asset: any) => (
-                <TableRow key={asset._id} className="border-b border-gray-200">
-                  <TableCell className="py-4">
-                    <div className="flex items-center space-x-4">
-                      {/* Thumbnail */}
-                      <div 
-                        onClick={() => handleAssetClick(asset)}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                      >
-                        {asset.thumbnail ? (
-                          <img 
-                            src={`${API_BASE_URL}${asset.thumbnail}`}
-                            alt={asset.name}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* File Information */}
-                      <div className="flex-1">
-                        {editingAsset && editingAsset._id === asset._id ? (
-                          <div className="flex items-center space-x-2">
-                            <Input
-                              type="text"
-                              value={editedName}
-                              onChange={(e) => setEditedName(e.target.value)}
-                              className="font-medium text-gray-900"
-                              autoFocus
-                            />
-                            <Button
-                              onClick={() => handleSaveAssetName(asset)}
-                              size="sm"
-                              variant="default"
-                              >
-                              Save
-                            </Button>
-                            <Button
-                              onClick={handleCancelEdit}
-                              size="sm"
-                              variant="outline"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <div 
-                            onClick={() => handleAssetClick(asset)}
-                            className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-                          >
-                            {asset.name}
-                          </div>
-                        )}
-                        <div className="text-sm text-gray-600">
-                          {asset.resolution ? `${asset.resolution.width}x${asset.resolution.height}` : 'Unknown resolution'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {asset.type}, {asset.size}, {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
-                        </div>
-                        {asset.playlists && asset.playlists.length > 0 && (
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-xs text-blue-600 font-medium">
-                              Playlists: {asset.playlists.join(', ')}
-                            </span>
-                          </div>
-                        )}
-                        
-
-                      </div>
-                    </div>
-                  </TableCell>
-                  
-
-                  
-                  {/* Actions */}
-                  <TableCell>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-3">
-                      <button 
-                        onClick={() => openValidityDialog(asset)}
-                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-700"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-sm">add validity</span>
-                      </button>
-                      
-
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          onClick={() => handleViewAsset(asset)}
-                          variant="ghost"
-                          size="icon"
-                          title="View Asset"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </Button>
-                        <Button 
-                          onClick={() => handleEditAsset(asset)}
-                          variant="ghost"
-                          size="icon"
-                          title="Edit Asset"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </Button>
-                        <Button 
-                          onClick={() => handleDeleteAsset(asset)}
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50" 
-                          title="Delete Asset"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {asset.validity && asset.validity.enable && (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-green-600 font-medium">
-                          Valid: {new Date(asset.validity.startdate).toLocaleDateString()} - {new Date(asset.validity.enddate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  </TableCell>
-                  
-                  {/* Checkbox */}
-                  <TableCell>
-                    <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                  </TableCell>
-                </TableRow>
+                <AssetRow
+                  key={asset._id}
+                  asset={asset}
+                  editingAsset={editingAsset}
+                  editedName={editedName}
+                  onAssetClick={handleAssetClick}
+                  onEditAsset={handleEditAsset}
+                  onViewAsset={handleViewAsset}
+                  onDeleteAsset={handleDeleteAsset}
+                  onValidityOpen={handleValidityOpen}
+                  onNameChange={handleNameChange}
+                  onSaveAssetName={handleSaveAssetName}
+                  onCancelEdit={handleCancelEdit}
+                />
               ))}
             </TableBody>
           </Table>
@@ -513,12 +669,16 @@ export default function AssetsPage() {
       )}
 
       {/* Validity Dialog */}
-      <ValidityDialog
-        open={validityDialogOpen}
-        onOpenChange={setValidityDialogOpen}
-        asset={selectedAsset}
-        onSave={saveValidity}
-      />
+      {validityDialogOpen && (
+        <Suspense fallback={<div>Loading dialog...</div>}>
+          <ValidityDialog
+            open={validityDialogOpen}
+            onOpenChange={setValidityDialogOpen}
+            asset={selectedAsset}
+            onSave={saveValidity}
+          />
+        </Suspense>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -541,22 +701,30 @@ export default function AssetsPage() {
       </Dialog>
 
       {/* Upload Status Dialog */}
-      <UploadStatusDialog
-        open={uploadDialogOpen}
-        onOpenChange={handleDialogClose}
-        uploadProgress={uploadProgress}
-        uploadStatus={uploadStatus}
-        uploadedFiles={uploadedFiles}
-        onContinue={handleContinueAfterUpload}
-      />
+      {uploadDialogOpen && (
+        <Suspense fallback={<div>Loading upload dialog...</div>}>
+          <UploadStatusDialog
+            open={uploadDialogOpen}
+            onOpenChange={handleDialogClose}
+            uploadProgress={uploadProgress}
+            uploadStatus={uploadStatus}
+            uploadedFiles={uploadedFiles}
+            onContinue={handleContinueAfterUpload}
+          />
+        </Suspense>
+      )}
 
       {/* Add Link Dialog */}
-      <AddLinkDialog
-        open={addLinkDialogOpen}
-        onOpenChange={handleCloseAddDialog}
-        onSave={handleSaveLink}
-        preselectedFileType={preselectedFileType}
-      />
+      {addLinkDialogOpen && (
+        <Suspense fallback={<div>Loading add link dialog...</div>}>
+          <AddLinkDialog
+            open={addLinkDialogOpen}
+            onOpenChange={handleCloseAddDialog}
+            onSave={handleSaveLink}
+            preselectedFileType={preselectedFileType}
+          />
+        </Suspense>
+      )}
     </div>
   );
 } 

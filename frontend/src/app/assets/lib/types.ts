@@ -1,26 +1,24 @@
 // Asset related types
 export interface Asset {
-  _id: string;
   name: string;
   type: string;
+  duration: number;
   size: string;
-  duration?: string | null;
-  resolution?: {
-    width: number;
-    height: number;
-  };
-  thumbnail?: string;
-  createdAt?: string;
-  playlists?: string[];
-  labels?: string[];
-  validity?: {
+  thumbnail: string;
+  validity: {
     enable: boolean;
-    startdate?: string;
-    enddate?: string;
+    startdate: string;
+    enddate: string;
+    starthour: number;
+    endhour: number;
   };
-  url?: string;
-  fullPath?: string;
-  details?: LinkDetails;
+  groupIds: string[];
+  playlists: string[];
+  labels: string[];
+  resolution: {
+    width: string;
+    height: string;
+  };
 }
 
 // Link specific types
@@ -56,6 +54,29 @@ export interface PostUploadData {
   categories: string[];
 }
 
+export interface UploadResponse {
+  stat_message: string;
+  success: boolean;
+  data: {
+    name: string;
+    size: number;
+    type: string;
+  };
+}
+
+export interface FileDetailsResponse {
+  stat_message: string;
+  data: {
+    name: string;
+    size: string;
+    ctime: string;
+    path: string;
+    type: string;
+    dbdata: Asset;
+  };
+  success: boolean;
+}
+
 // Component prop types
 export interface UploadStatusDialogProps {
   open: boolean;
@@ -88,13 +109,15 @@ export interface ApiResponse<T = any> {
 }
 
 export interface FilesResponse {
-  files: string[];
-  dbdata: Asset[];
-  systemAssets?: string[];
-  pagination?: {
-    page: number;
-    perPage: number;
-    total: number;
-    pages: number;
+  stat_message: string;
+  data: {
+    sizes: {
+      total: number;
+      used: number;
+    };
+    files: string[];
+    dbdata: Asset[];
+    systemAssets: string[];
   };
+  success: boolean;
 }

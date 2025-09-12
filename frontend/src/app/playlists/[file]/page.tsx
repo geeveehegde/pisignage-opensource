@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { playlistAPI, assetAPI, API_BASE_URL } from '@/lib/api';
 import type { Playlist } from '../lib/types';
@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Settings } from 'lucide-react';
-import PlaylistSettingsDialog from '../components/PlaylistSettingsDialog';
+// Lazy load dialog component
+const PlaylistSettingsDialog = lazy(() => import('../components/PlaylistSettingsDialog'));
 
 interface PlaylistDetailPageProps {
   params: Promise<{
@@ -47,8 +48,8 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
       ]);
       
       setPlaylist(playlistResponse.data);
-      setAllFiles(filesResponse.data?.files || []);
-      setAllAssets(filesResponse.data?.dbdata || []);
+      setAllFiles(filesResponse.data?.data?.files || []);
+      setAllAssets(filesResponse.data?.data?.dbdata || []);
     } catch (error: any) {
       setError(error.response?.data?.message || 'Failed to fetch playlist details');
     } finally {
@@ -273,6 +274,7 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
                             <img 
                               src={`${API_BASE_URL}${assetData.thumbnail}`}
                               alt={file}
+                              loading="lazy"
                               className="w-12 h-12 object-cover rounded-lg"
                             />
                           ) : (
@@ -329,12 +331,16 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
       </div>
 
       {/* Settings Dialog */}
-      <PlaylistSettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        playlist={playlist}
-        onSave={handleSaveSettings}
-      />
+      {settingsOpen && (
+        <Suspense fallback={<div>Loading settings dialog...</div>}>
+          <PlaylistSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            playlist={playlist}
+            onSave={handleSaveSettings}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

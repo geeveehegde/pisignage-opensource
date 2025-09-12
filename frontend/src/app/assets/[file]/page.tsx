@@ -223,6 +223,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
                   <img 
                     src={`${API_BASE_URL}/media/${filename}`}
                     alt={asset.name}
+                    loading="lazy"
                     className="w-full h-auto max-h-[70vh] object-contain rounded-lg border border-gray-200 shadow-sm"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';

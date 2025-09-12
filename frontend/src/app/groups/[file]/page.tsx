@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { groupAPI } from '@/lib/api';
 import type { DeployOptions, TickerSettings, EmergencyMessage } from '../lib/types';
@@ -15,9 +15,10 @@ import {
   MessageSquare,
   Play
 } from 'lucide-react';
-import TickerDialog from '../components/TickerDialog';
-import EmergencyMessageDialog from '../components/EmergencyMessageDialog';
-import SettingsDialog from '../components/SettingsDialog';
+// Lazy load dialog components
+const TickerDialog = lazy(() => import('../components/TickerDialog'));
+const EmergencyMessageDialog = lazy(() => import('../components/EmergencyMessageDialog'));
+const SettingsDialog = lazy(() => import('../components/SettingsDialog'));
 
 interface GroupDetailPageProps {
   params: Promise<{
@@ -194,18 +195,30 @@ export default function GroupDetailPage({ params }: GroupDetailPageProps) {
 
 
       {/* Dialogs */}
-      <TickerDialog
-        open={tickerDialogOpen}
-        onOpenChange={setTickerDialogOpen}
-      />
-      <EmergencyMessageDialog
-        open={emergencyMessageOpen}
-        onOpenChange={setEmergencyMessageOpen}
-      />
-      <SettingsDialog
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
-      />
+      {tickerDialogOpen && (
+        <Suspense fallback={<div>Loading ticker dialog...</div>}>
+          <TickerDialog
+            open={tickerDialogOpen}
+            onOpenChange={setTickerDialogOpen}
+          />
+        </Suspense>
+      )}
+      {emergencyMessageOpen && (
+        <Suspense fallback={<div>Loading emergency dialog...</div>}>
+          <EmergencyMessageDialog
+            open={emergencyMessageOpen}
+            onOpenChange={setEmergencyMessageOpen}
+          />
+        </Suspense>
+      )}
+      {settingsDialogOpen && (
+        <Suspense fallback={<div>Loading settings dialog...</div>}>
+          <SettingsDialog
+            open={settingsDialogOpen}
+            onOpenChange={setSettingsDialogOpen}
+          />
+        </Suspense>
+      )}
     </div>
   );
 } 

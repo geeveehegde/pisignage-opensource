@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { groupAPI, playerAPI } from '@/lib/api';
 import type { Player } from './lib/types';
 import type { Group } from '@/app/groups/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -23,24 +23,117 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
-  Settings,
-  MoreVertical,
-  RefreshCw,
-  Download,
-  UserPlus,
-  Clock,
-  ArrowUpDown,
-  Play
-} from 'lucide-react';
+  UserPlusIcon,
+  FunnelIcon,
+  TagIcon,
+  Cog6ToothIcon,
+  EllipsisVerticalIcon,
+  ArrowPathIcon,
+  ArrowDownTrayIcon,
+  ClockIcon,
+  PlayIcon,
+  ComputerDesktopIcon
+} from '@heroicons/react/24/outline';
+
+// Memoized Player Row Component
+const PlayerRow = memo(({ 
+  player, 
+  selectedPlayers, 
+  onPlayerSelect
+}: {
+  player: Player;
+  selectedPlayers: string[];
+  onPlayerSelect: (playerId: string) => void;
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'playing': return 'bg-blue-500';
+      case 'offline': return 'bg-red-500';
+      case 'not-playing': return 'bg-yellow-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  return (
+    <TableRow className="border-b border-gray-200">
+      {/* Checkbox */}
+      <TableCell>
+        <Checkbox 
+          checked={selectedPlayers.includes(player._id)}
+          onCheckedChange={() => onPlayerSelect(player._id)}
+        />
+      </TableCell>
+      
+      {/* Name */}
+      <TableCell className="py-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <ComputerDesktopIcon className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <div className="font-medium text-primary">
+              {player.name || player._id}
+            </div>
+            <div className="text-xs text-gray-400">
+              {player.location || 'Unknown location'}
+            </div>
+            <div className="flex items-center space-x-2 mt-1">
+              <div className={`w-2 h-2 rounded-full ${getStatusColor(player.status)}`}></div>
+              <span className="text-xs text-gray-500 capitalize">{player.status}</span>
+            </div>
+          </div>
+        </div>
+      </TableCell>
+      
+      {/* Type */}
+      <TableCell>
+        <span className="text-sm text-gray-600">Player</span>
+      </TableCell>
+      
+      {/* Categories */}
+      <TableCell>
+        <span className="text-xs text-gray-400">{player.group || 'No group'}</span>
+      </TableCell>
+      
+      {/* Actions */}
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <EllipsisVerticalIcon className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>
+                <PlayIcon className="w-4 h-4 mr-2" />
+                Control Player
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Cog6ToothIcon className="w-4 h-4 mr-2" />
+                Player Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <ClockIcon className="w-4 h-4 mr-2" />
+                Schedule
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
+PlayerRow.displayName = 'PlayerRow';
 
 export default function PlayersPage() {
   const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
   // Stats
@@ -59,11 +152,7 @@ export default function PlayersPage() {
       // Load groups and players in parallel
       const [groupsResponse, playersResponse, statsResponse] = await Promise.all([
         groupAPI.getGroups(),
-        playerAPI.getPlayers({
-          group: selectedGroup !== 'all' ? selectedGroup : undefined,
-          status: statusFilter !== 'all' ? statusFilter : undefined,
-          search: searchTerm.trim() || undefined,
-        }),
+        playerAPI.getPlayers({}),
         playerAPI.getPlayerStats()
       ]);
 
@@ -82,30 +171,41 @@ export default function PlayersPage() {
     }
   };
 
-  const handlePlayerSelect = (playerId: string) => {
+  // Filtered players based on search term
+  const filteredPlayers = useMemo(() => {
+    if (!searchTerm.trim()) return players;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return players.filter((player: Player) => {
+      return (
+        (player.name && player.name.toLowerCase().includes(searchLower)) ||
+        player._id.toLowerCase().includes(searchLower) ||
+        (player.location && player.location.toLowerCase().includes(searchLower)) ||
+        (player.group && player.group.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [players, searchTerm]);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedPlayers.length === filteredPlayers.length) {
+      setSelectedPlayers([]);
+    } else {
+      setSelectedPlayers(filteredPlayers.map((player: Player) => player._id));
+    }
+  }, [selectedPlayers.length, filteredPlayers]);
+
+  const handlePlayerSelect = useCallback((playerId: string) => {
     setSelectedPlayers(prev => 
       prev.includes(playerId) 
         ? prev.filter(id => id !== playerId)
         : [...prev, playerId]
     );
-  };
+  }, []);
 
-  const handleSelectAll = () => {
-    setSelectedPlayers(
-      selectedPlayers.length === players.length 
-        ? [] 
-        : players.map(p => p._id)
-    );
-  };
-
-  const handleRefresh = () => {
-    fetchData();
-  };
-
-  // Load data on mount and when filters change
+  // Load data on mount
   useEffect(() => {
     fetchData();
-  }, [selectedGroup, statusFilter, searchTerm]);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -129,163 +229,86 @@ export default function PlayersPage() {
   }
 
   return (
-    <div className="w-full h-full">
-      <div className="flex items-center justify-between mb-6 p-6">
-        <h1 className="text-2xl font-bold">Players</h1>
+    <div className="w-full h-full p-4">
+      <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-sidebar border border-gray-200">
+        <div className="flex items-center space-x-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="flex items-center space-x-2">
+                <UserPlusIcon className="w-4 h-4" />
+                Add Player
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>
+                Register Player
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Import Players
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Input 
+            type="text" 
+            placeholder="Search players..." 
+            className="w-64"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="icon" title="Filter">
+            <FunnelIcon className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="icon" title="Categories">
+            <TagIcon className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Players Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Registered Players</h2>
-            <div className="text-sm text-gray-600 mt-1">
-              total: {playerStats.total} | online: {playerStats.online} | offline: {playerStats.offline} | licensed: {playerStats.licensed}
-            </div>
-          </div>
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-          <div className="flex-1">
-            <Input
-              placeholder="Search players..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-          <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select group" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Groups</SelectItem>
-              {groups.map((group) => (
-                <SelectItem key={group._id} value={group.name}>
-                  {group.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="online">Online</SelectItem>
-              <SelectItem value="offline">Offline</SelectItem>
-              <SelectItem value="playing">Playing</SelectItem>
-              <SelectItem value="not-playing">Not Playing</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Download List
-          </Button>
-          <Button variant="outline" size="sm">
-            <UserPlus className="w-4 h-4 mr-2" />
-            Register Player
-          </Button>
-        </div>
-
-        {/* Players Table */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <input
-                  type="checkbox"
-                  checked={selectedPlayers.length === players.length && players.length > 0}
-                  onChange={handleSelectAll}
-                  className="rounded border-gray-300"
-                />
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center space-x-1">
-                  <span>Player Name</span>
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </TableHead>
-              <TableHead>Current Playlist</TableHead>
-              <TableHead>Group</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {players.map((player) => (
-              <TableRow key={player._id}>
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    checked={selectedPlayers.includes(player._id)}
-                    onChange={() => handlePlayerSelect(player._id)}
-                    className="rounded border-gray-300"
+      
+      {loading ? (
+        <div className="p-6">Loading...</div>
+      ) : players ? (
+        <div className="w-full bg-sidebar rounded-md p-4 border border-gray-200">
+          <Table className="w-full bg-white rounded-md">
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <Checkbox 
+                    checked={selectedPlayers.length === filteredPlayers.length && filteredPlayers.length > 0}
+                    onCheckedChange={handleSelectAll}
                   />
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-blue-600 cursor-pointer hover:underline">
-                    {player.name}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-blue-600 cursor-pointer hover:underline">
-                    {player.currentPlaylist || 'default'}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-blue-600 cursor-pointer hover:underline">
-                    {player.group || 'default'}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-blue-600 cursor-pointer hover:underline">
-                    {player.location || 'Unknown'}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(player.status)}`}></div>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>
-                        <Play className="w-4 h-4 mr-2" />
-                        Control Player
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Player Settings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Clock className="w-4 h-4 mr-2" />
-                        Schedule
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Categories</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {players.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No players found</p>
-          </div>
-        )}
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredPlayers.length > 0 ? (
+                filteredPlayers.map((player: Player) => (
+                  <PlayerRow
+                    key={player._id}
+                    player={player}
+                    selectedPlayers={selectedPlayers}
+                    onPlayerSelect={handlePlayerSelect}
+                  />
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    {searchTerm ? `No players found matching "${searchTerm}"` : 'No players available'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="p-6">No data available</div>
+      )}
     </div>
   );
 }

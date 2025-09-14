@@ -37,27 +37,27 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Player reporting status</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="bg-green-500 text-white p-4 rounded-lg text-center">
+              <div className="bg-[#4b9c7a] text-white p-4 rounded-lg text-center">
                 <div className="text-sm font-medium mb-1">NOW</div>
                 <div className="text-2xl font-bold">0</div>
               </div>
-              <div className="bg-blue-400 text-white p-4 rounded-lg text-center">
+              <div className="bg-[#4f78a1] bg-opacity-80 text-white p-4 rounded-lg text-center">
                 <div className="text-sm font-medium mb-1">LAST 60 MINUTES</div>
                 <div className="text-2xl font-bold">0</div>
               </div>
-              <div className="bg-purple-500 text-white p-4 rounded-lg text-center">
+              <div className="bg-[#774fa1] bg-opacity-80 text-white p-4 rounded-lg text-center">
                 <div className="text-sm font-medium mb-1">LAST 4 HOURS</div>
                 <div className="text-2xl font-bold">0</div>
               </div>
-              <div className="bg-yellow-500 text-white p-4 rounded-lg text-center">
+              <div className="bg-[#c2bf65] bg-opacity-80 text-white p-4 rounded-lg text-center">
                 <div className="text-sm font-medium mb-1">TODAY</div>
                 <div className="text-2xl font-bold">0</div>
               </div>
-              <div className="bg-pink-400 text-white p-4 rounded-lg text-center">
+              <div className="bg-[#ad719e] bg-opacity-80 text-white p-4 rounded-lg text-center">
                 <div className="text-sm font-medium mb-1">LAST 7 DAYS</div>
                 <div className="text-2xl font-bold">0</div>
               </div>
-              <div className="bg-red-500 text-white p-4 rounded-lg text-center">
+              <div className="bg-[#945454] bg-opacity-80 text-white p-4 rounded-lg text-center">
                 <div className="text-sm font-medium mb-1">&gt; 7 DAYS</div>
                 <div className="text-2xl font-bold">0</div>
               </div>

@@ -2,13 +2,109 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { playlistAPI } from '@/lib/api';
 import type { Playlist } from './lib/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PlusIcon, FunnelIcon, TagIcon } from '@heroicons/react/24/outline';
+import { CalendarDaysIcon, PlayIcon, TrashIcon, DocumentDuplicateIcon, QueueListIcon } from '@heroicons/react/24/outline';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+// Memoized Playlist Row Component
+const PlaylistRow = memo(({ 
+  playlist, 
+  selectedPlaylists, 
+  onPlaylistSelect,
+  onPlaylistClick
+}: {
+  playlist: Playlist;
+  selectedPlaylists: string[];
+  onPlaylistSelect: (playlistId: string) => void;
+  onPlaylistClick: (playlist: Playlist) => void;
+}) => {
+  const handlePlaylistClick = useCallback(() => onPlaylistClick(playlist), [onPlaylistClick, playlist]);
+
+  return (
+    <TableRow className="border-b border-gray-200">
+      {/* Checkbox */}
+      <TableCell>
+        <Checkbox 
+          checked={selectedPlaylists.includes(playlist.name)}
+          onCheckedChange={() => onPlaylistSelect(playlist.name)}
+        />
+      </TableCell>
+      
+      {/* Name */}
+      <TableCell className="py-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <QueueListIcon className="w-6 h-6 text-green-600" />
+          </div>
+          <div className="flex-1">
+            <div 
+              onClick={handlePlaylistClick}
+              className="font-medium text-primary cursor-pointer transition-colors"
+            >
+              {playlist.name}
+            </div>
+            <div className="text-xs text-gray-400">
+              {playlist.assets?.length || 0} assets
+            </div>
+            <div className="text-xs text-gray-400">
+              Layout: {playlist.layout || '1'} • {playlist.templateName || '10'} secs
+            </div>
+          </div>
+        </div>
+      </TableCell>
+      
+      {/* Type */}
+      <TableCell>
+        <span className="text-sm text-gray-600">Playlist</span>
+      </TableCell>
+      
+      {/* Categories */}
+      <TableCell>
+        <span className="text-xs text-gray-400">No categories</span>
+      </TableCell>
+      
+      {/* Actions */}
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="icon" title="Schedule">
+            <CalendarDaysIcon className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" title="Deploy">
+            <PlayIcon className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" title="Copy">
+            <DocumentDuplicateIcon className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" title="Delete" className="text-red-500 hover:text-red-700">
+            <TrashIcon className="w-4 h-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
+PlaylistRow.displayName = 'PlaylistRow';
 
 export default function PlaylistsPage() {
   const { user, loading } = useAuth();
@@ -16,8 +112,8 @@ export default function PlaylistsPage() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newPlaylistName, setNewPlaylistName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPlaylists, setSelectedPlaylists] = useState<string[]>([]);
 
   // Temporarily bypass authentication
   // useEffect(() => {
@@ -47,27 +143,35 @@ export default function PlaylistsPage() {
     }
   };
 
-  const handleCreatePlaylist = async () => {
-    if (!newPlaylistName.trim()) return;
+  // Filtered playlists based on search term
+  const filteredPlaylists = useMemo(() => {
+    if (!searchTerm.trim()) return playlists;
     
-    try {
-      setIsCreating(true);
-      setError(null);
-      await playlistAPI.createPlaylist(newPlaylistName.trim());
-      setNewPlaylistName('');
-      await fetchPlaylists(); // Refresh the list
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to create playlist');
-    } finally {
-      setIsCreating(false);
-    }
-  };
+    const searchLower = searchTerm.toLowerCase();
+    return playlists.filter((playlist: Playlist) => {
+      return playlist.name.toLowerCase().includes(searchLower);
+    });
+  }, [playlists, searchTerm]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleCreatePlaylist();
+  const handleSelectAll = useCallback(() => {
+    if (selectedPlaylists.length === filteredPlaylists.length) {
+      setSelectedPlaylists([]);
+    } else {
+      setSelectedPlaylists(filteredPlaylists.map((playlist: Playlist) => playlist.name));
     }
-  };
+  }, [selectedPlaylists.length, filteredPlaylists]);
+
+  const handlePlaylistSelect = useCallback((playlistId: string) => {
+    setSelectedPlaylists(prev => 
+      prev.includes(playlistId) 
+        ? prev.filter(id => id !== playlistId)
+        : [...prev, playlistId]
+    );
+  }, []);
+
+  const handlePlaylistClick = useCallback((playlist: Playlist) => {
+    router.push(`/playlists/${encodeURIComponent(playlist.name)}`);
+  }, [router]);
 
 
 
@@ -88,167 +192,101 @@ export default function PlaylistsPage() {
   // }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Page Header */}
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Available Playlists</h1>
-            </div>
-            <div className="flex space-x-3">
-              <Button variant="default" size="sm">
-                Download list
+    <div className="w-full h-full p-4">
+      <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-sidebar border border-gray-200">
+        <div className="flex items-center space-x-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="flex items-center space-x-2">
+                <PlusIcon className="w-4 h-4" />
+                Add Playlist
               </Button>
-              <Button variant="outline" size="sm">
-                Edit
-              </Button>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <Input
-                type="text"
-                placeholder="Filter by Name"
-                className="text-sm"
-              />
-              <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.586V4z" />
-                </svg>
-                <span>Filter by category</span>
-              </Button>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">multiple</span>
-              <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                <option>Select</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Error State */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-red-800">{error}</p>
-              <Button
-                onClick={fetchPlaylists}
-                variant="link"
-                size="sm"
-                className="mt-2 text-red-600 hover:text-red-800 p-0 h-auto"
-              >
-                Try again
-              </Button>
-            </div>
-          )}
-
-          {/* Add New Playlist */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Add a new playlist"
-                value={newPlaylistName}
-                onChange={(e) => setNewPlaylistName(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isCreating}
-                className="flex-1"
-              />
-              <Button 
-                onClick={handleCreatePlaylist}
-                disabled={isCreating || !newPlaylistName.trim()}
-                variant="default"
-                >
-                {isCreating ? 'ADDING...' : 'ADD'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : (
-            /* Playlists List */
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {!Array.isArray(playlists) || playlists.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">🎵</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No playlists found</h3>
-                  <p className="text-gray-500 mb-4">Get started by creating your first playlist</p>
-                  <Button variant="default">
-                    Create Your First Playlist
-                  </Button>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200">
-                  {playlists.map((playlist, index) => (
-                    <div
-                      key={playlist.name}
-                      className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
-                    >
-                      {/* Playlist Info */}
-                      <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex-shrink-0">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <Link href={`/playlists/${encodeURIComponent(playlist.name)}`}>
-                            <h3 className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer truncate">
-                              {playlist.name}
-                            </h3>
-                          </Link>
-                        </div>
-                      </div>
-
-                      {/* Asset Count & Layout Info */}
-                      <div className="hidden sm:flex items-center space-x-8 flex-shrink-0">
-                        <div className="text-sm text-gray-500">
-                          {playlist.assets?.length || 0} assets, layout: {playlist.layout || '1'}, {playlist.templateName || '10'} secs
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center space-x-2 ml-4">
-                        {/* Schedule Icon */}
-                        <Button variant="ghost" size="sm" className="p-2 text-blue-500 hover:text-blue-700" title="Schedule">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </Button>
-
-                        {/* Deploy Icon */}
-                        <Button variant="ghost" size="sm" className="p-2 text-blue-500 hover:text-blue-700" title="Deploy">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                          </svg>
-                        </Button>
-
-                        {/* Delete Icon */}
-                        <Button variant="ghost" size="sm" className="p-2 text-red-500 hover:text-red-700" title="Delete">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </Button>
-
-                        {/* Copy Icon */}
-                        <Button variant="ghost" size="sm" className="p-2 text-gray-500 hover:text-gray-700" title="Copy">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>
+                Create New Playlist
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                Import Playlists
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Input 
+            type="text" 
+            placeholder="Search playlists..." 
+            className="w-64"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="icon" title="Filter">
+            <FunnelIcon className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="icon" title="Categories">
+            <TagIcon className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {isLoading ? (
+        <div className="p-6">Loading...</div>
+      ) : playlists ? (
+        <div className="w-full bg-sidebar rounded-md p-4 border border-gray-200">
+          <Table className="w-full bg-white rounded-md">
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <Checkbox 
+                    checked={selectedPlaylists.length === filteredPlaylists.length && filteredPlaylists.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Categories</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPlaylists.length > 0 ? (
+                filteredPlaylists.map((playlist: Playlist) => (
+                  <PlaylistRow
+                    key={playlist.name}
+                    playlist={playlist}
+                    selectedPlaylists={selectedPlaylists}
+                    onPlaylistSelect={handlePlaylistSelect}
+                    onPlaylistClick={handlePlaylistClick}
+                  />
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    {searchTerm ? `No playlists found matching "${searchTerm}"` : 'No playlists available'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="p-6">No data available</div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mt-4">
+          <p className="text-red-800">{error}</p>
+          <Button
+            onClick={fetchPlaylists}
+            variant="link"
+            size="sm"
+            className="mt-2 text-red-600 hover:text-red-800 p-0 h-auto"
+          >
+            Try again
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

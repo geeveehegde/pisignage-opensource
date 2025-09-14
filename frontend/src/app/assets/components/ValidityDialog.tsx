@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -23,8 +24,8 @@ interface ValidityDialogProps {
 export default function ValidityDialog({ open, onOpenChange, asset, onSave }: ValidityDialogProps) {
   const [validityData, setValidityData] = useState({
     enable: true,
-    startdate: '',
-    enddate: '',
+    startdate: undefined as Date | undefined,
+    enddate: undefined as Date | undefined,
     starthour: 0,
     endhour: 24
   });
@@ -34,16 +35,16 @@ export default function ValidityDialog({ open, onOpenChange, asset, onSave }: Va
     if (asset?.validity && asset.validity.enable) {
       setValidityData({
         enable: true,
-        startdate: asset.validity.startdate ? asset.validity.startdate.split('T')[0] : '',
-        enddate: asset.validity.enddate ? asset.validity.enddate.split('T')[0] : '',
+        startdate: asset.validity.startdate ? new Date(asset.validity.startdate) : undefined,
+        enddate: asset.validity.enddate ? new Date(asset.validity.enddate) : undefined,
         starthour: asset.validity.starthour || 0,
         endhour: asset.validity.endhour || 24
       });
     } else {
       setValidityData({
         enable: true,
-        startdate: '',
-        enddate: '',
+        startdate: undefined,
+        enddate: undefined,
         starthour: 0,
         endhour: 24
       });
@@ -57,9 +58,9 @@ export default function ValidityDialog({ open, onOpenChange, asset, onSave }: Va
         ...asset,
         validity: {
           enable: validityData.enable,
-          startdate: validityData.startdate ? new Date(validityData.startdate).toISOString() : null,
+          startdate: validityData.startdate ? validityData.startdate.toISOString() : null,
           starthour: validityData.starthour,
-          enddate: validityData.enddate ? new Date(validityData.enddate).toISOString() : null,
+          enddate: validityData.enddate ? validityData.enddate.toISOString() : null,
           endhour: validityData.endhour
         }
       };
@@ -75,8 +76,8 @@ export default function ValidityDialog({ open, onOpenChange, asset, onSave }: Va
         // Reset form data
         setValidityData({
           enable: true,
-          startdate: '',
-          enddate: '',
+          startdate: undefined,
+          enddate: undefined,
           starthour: 0,
           endhour: 24
         });
@@ -94,8 +95,8 @@ export default function ValidityDialog({ open, onOpenChange, asset, onSave }: Va
       // Reset form data when closing
       setValidityData({
         enable: true,
-        startdate: '',
-        enddate: '',
+        startdate: undefined,
+        enddate: undefined,
         starthour: 0,
         endhour: 24
       });
@@ -127,37 +128,26 @@ export default function ValidityDialog({ open, onOpenChange, asset, onSave }: Va
           {validityData.enable && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valid from</label>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    value={validityData.startdate}
-                    onChange={(e) => setValidityData(prev => ({ ...prev, startdate: e.target.value }))}
-                    className="pr-10"
-                  />
-                  <svg className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Valid from</label>
+                <DatePicker
+                  date={validityData.startdate}
+                  onDateChange={(date) => setValidityData(prev => ({ ...prev, startdate: date }))}
+                  placeholder="Select start date"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">till</label>
-                <div className="relative">
-                  <Input
-                    type="date"
-                    value={validityData.enddate}
-                    onChange={(e) => setValidityData(prev => ({ ...prev, enddate: e.target.value }))}
-                    className="pr-10"
-                  />
-                  <svg className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Till</label>
+                <DatePicker
+                  date={validityData.enddate}
+                  onDateChange={(date) => setValidityData(prev => ({ ...prev, enddate: date }))}
+                  placeholder="Select end date"
+                />
               </div>
 
               {/* Show hour fields only when start and end dates are the same */}
-              {validityData.startdate && validityData.enddate && validityData.startdate === validityData.enddate && (
+              {validityData.startdate && validityData.enddate && 
+               validityData.startdate.toDateString() === validityData.enddate.toDateString() && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Hour</label>

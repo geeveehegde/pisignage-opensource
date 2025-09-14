@@ -7,7 +7,7 @@ import type { Playlist } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Settings } from 'lucide-react';
+import { ArrowLeftIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 // Lazy load dialog component
 const PlaylistSettingsDialog = lazy(() => import('../components/PlaylistSettingsDialog'));
 
@@ -161,7 +161,7 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
               variant="outline" 
               size="sm"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
               Back
             </Button>
             <h1 className="text-2xl font-bold">Loading...</h1>
@@ -184,7 +184,7 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
               variant="outline" 
               size="sm"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
               Back
             </Button>
             <h1 className="text-2xl font-bold">Error</h1>
@@ -216,14 +216,14 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
             variant="outline" 
             size="sm"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Back
           </Button>
           <h1 className="text-2xl font-bold">{playlist?.name || playlistName}</h1>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="outline" onClick={() => setSettingsOpen(true)}>
-            <Settings className="w-4 h-4 mr-2" />
+            <Cog6ToothIcon className="w-4 h-4 mr-2" />
             Settings
           </Button>
           <Button variant="default">

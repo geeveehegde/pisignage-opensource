@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { assetAPI, API_BASE_URL } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Download, Eye, Edit, Save } from 'lucide-react';
+import { ArrowLeftIcon, ArrowDownTrayIcon, EyeIcon, PencilIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 interface AssetDetailsPageProps {
   params: Promise<{
@@ -160,7 +160,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-6xl mx-auto">
           <Button onClick={handleBack} variant="outline" className="mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Back to Assets
           </Button>
           <div className="text-center py-12">
@@ -181,14 +181,14 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button onClick={handleBack} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Back to Assets
           </Button>
           
           <div className="flex items-center space-x-3">
             {!isLink && (
               <Button onClick={handleDownload} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
+                <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                 Download
               </Button>
             )}
@@ -196,12 +196,12 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
               <>
                 {isEditing ? (
                   <Button onClick={handleSaveLinkConfiguration} variant="default">
-                    <Save className="w-4 h-4 mr-2" />
+                    <CheckIcon className="w-4 h-4 mr-2" />
                     Save Configuration
                   </Button>
                 ) : (
                   <Button onClick={handleEditToggle} variant="outline">
-                    <Edit className="w-4 h-4 mr-2" />
+                    <PencilIcon className="w-4 h-4 mr-2" />
                     Edit Configuration
                   </Button>
                 )}
@@ -394,11 +394,11 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
                 <h3 className="font-medium text-gray-900 mb-3">Quick Actions</h3>
                 <div className="space-y-2">
                   <Button variant="outline" className="w-full justify-start">
-                    <Eye className="w-4 h-4 mr-2" />
+                    <EyeIcon className="w-4 h-4 mr-2" />
                     View in Player
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    <Download className="w-4 h-4 mr-2" />
+                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                     Download Original
                   </Button>
                 </div>

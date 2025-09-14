@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { settingsAPI } from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
@@ -122,32 +123,54 @@ export default function SettingsPage() {
       setSettings(prev => ({ ...prev, [key]: checked }));
       
       // Save to server
-      await settingsAPI.updateSetting(key, checked);
-      console.log(`Successfully saved ${key}:`, checked);
-    } catch (err) {
+      const response = await settingsAPI.updateSetting(key, checked);
+      
+      // Show success toast based on server response
+      if (response.success) {
+        toast.success(response.message || `${key} updated successfully`);
+      } else {
+        toast.error(response.message || `Failed to update ${key}`);
+        // Revert local state on error
+        setSettings(prev => ({ ...prev, [key]: !checked }));
+      }
+    } catch (err: any) {
       console.error(`Error saving ${key}:`, err);
+      // Show error toast
+      toast.error(err.response?.data?.message || `Failed to update ${key}`);
       // Revert local state on error
       setSettings(prev => ({ ...prev, [key]: !checked }));
-      // You could add a toast notification here for better UX
     }
   };
 
   const handleSaveSetting = async (key: string) => {
     try {
-      await settingsAPI.updateSetting(key, settings[key as keyof typeof settings]);
-      console.log(`Successfully saved ${key}:`, settings[key as keyof typeof settings]);
-    } catch (err) {
+      const response = await settingsAPI.updateSetting(key, settings[key as keyof typeof settings]);
+      
+      // Show toast based on server response
+      if (response.success) {
+        toast.success(response.message || `${key} saved successfully`);
+      } else {
+        toast.error(response.message || `Failed to save ${key}`);
+      }
+    } catch (err: any) {
       console.error(`Error saving ${key}:`, err);
-      // You could add a toast notification here for better UX
+      toast.error(err.response?.data?.message || `Failed to save ${key}`);
     }
   };
 
   const handleSaveAuthCredentials = async () => {
     try {
-      await settingsAPI.updateSetting('authCredentials', settings.authCredentials);
-      console.log('Successfully saved auth credentials');
-    } catch (err) {
+      const response = await settingsAPI.updateSetting('authCredentials', settings.authCredentials);
+      
+      // Show toast based on server response
+      if (response.success) {
+        toast.success(response.message || 'Authentication credentials saved successfully');
+      } else {
+        toast.error(response.message || 'Failed to save authentication credentials');
+      }
+    } catch (err: any) {
       console.error('Error saving auth credentials:', err);
+      toast.error(err.response?.data?.message || 'Failed to save authentication credentials');
     }
   };
 

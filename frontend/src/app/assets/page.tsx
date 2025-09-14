@@ -14,7 +14,9 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowUpTrayIcon, TagIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,10 +55,10 @@ const AssetThumbnail = memo(({
           src={`${API_BASE_URL}${thumbnail}`}
           alt={name}
           loading="lazy"
-          className="w-16 h-16 object-cover rounded-lg"
+          className="w-12 h-10 object-cover rounded-lg"
         />
       ) : (
-        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="w-12 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
           <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
         </div>
       )}
@@ -116,24 +118,16 @@ const AssetInfo = memo(({
     <>
       <div 
         onClick={onClick}
-        className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+        className="font-medium text-primary cursor-pointer transition-colors"
       >
         {asset.name}
       </div>
-      <div className="text-sm text-gray-600">
+      <div className="text-xs text-gray-400">
         {asset.resolution ? `${asset.resolution.width}x${asset.resolution.height}` : 'Unknown resolution'}
       </div>
-      <div className="text-sm text-gray-500">
-        {asset.type}, {asset.size}, {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+      <div className="text-xs text-gray-400">
+        {asset.size}, {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
       </div>
-      {asset.playlists && asset.playlists.length > 0 && (
-        <div className="flex items-center space-x-2 mt-1">
-          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          <span className="text-xs text-blue-600 font-medium">
-            Playlists: {asset.playlists.join(', ')}
-          </span>
-        </div>
-      )}
     </>
   );
 });
@@ -168,17 +162,7 @@ const AssetActions = memo(({
         </button>
         
         <div className="flex items-center space-x-2">
-          <Button 
-            onClick={onView}
-            variant="ghost"
-            size="icon"
-            title="View Asset"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </Button>
+          
           <Button 
             onClick={onEdit}
             variant="ghost"
@@ -229,7 +213,9 @@ const AssetRow = memo(({
   onValidityOpen, 
   onNameChange, 
   onSaveAssetName, 
-  onCancelEdit 
+  onCancelEdit,
+  selectedAssets,
+  onAssetSelect
 }: {
   asset: any;
   editingAsset: any;
@@ -242,6 +228,8 @@ const AssetRow = memo(({
   onNameChange: (name: string) => void;
   onSaveAssetName: (asset: any) => void;
   onCancelEdit: () => void;
+  selectedAssets: string[];
+  onAssetSelect: (assetId: string) => void;
 }) => {
   const isEditing = editingAsset && editingAsset._id === asset._id;
 
@@ -254,6 +242,15 @@ const AssetRow = memo(({
 
   return (
     <TableRow key={asset._id} className="border-b border-gray-200">
+      {/* Checkbox */}
+      <TableCell>
+        <Checkbox 
+          checked={selectedAssets.includes(asset._id)}
+          onCheckedChange={() => onAssetSelect(asset._id)}
+        />
+      </TableCell>
+      
+      {/* Name */}
       <TableCell className="py-4">
         <div className="flex items-center space-x-4">
           {/* Thumbnail */}
@@ -278,6 +275,29 @@ const AssetRow = memo(({
         </div>
       </TableCell>
       
+      {/* Type */}
+      <TableCell>
+        <span className="text-sm text-gray-600">{asset.type}</span>
+      </TableCell>
+      
+      {/* Categories */}
+      <TableCell>
+        {asset.playlists && asset.playlists.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {asset.playlists.slice(0, 2).map((playlist: string, index: number) => (
+              <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                {playlist}
+              </span>
+            ))}
+            {asset.playlists.length > 2 && (
+              <span className="text-xs text-gray-500">+{asset.playlists.length - 2}</span>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-gray-400">No categories</span>
+        )}
+      </TableCell>
+      
       {/* Actions */}
       <TableCell>
         <AssetActions
@@ -288,11 +308,6 @@ const AssetRow = memo(({
           onValidityOpen={handleValidityOpen}
         />
       </TableCell>
-      
-      {/* Checkbox */}
-      <TableCell>
-        <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-      </TableCell>
     </TableRow>
   );
 }, (prevProps, nextProps) => {
@@ -302,7 +317,8 @@ const AssetRow = memo(({
     prevProps.asset.name === nextProps.asset.name &&
     prevProps.asset.validity === nextProps.asset.validity &&
     prevProps.editingAsset?._id === nextProps.editingAsset?._id &&
-    prevProps.editedName === nextProps.editedName
+    prevProps.editedName === nextProps.editedName &&
+    prevProps.selectedAssets.includes(prevProps.asset._id) === nextProps.selectedAssets.includes(nextProps.asset._id)
   );
 });
 
@@ -326,6 +342,8 @@ export default function AssetsPage() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
   const [addLinkDialogOpen, setAddLinkDialogOpen] = useState(false);
   const [preselectedFileType, setPreselectedFileType] = useState<string | null>(null);
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -347,32 +365,51 @@ export default function AssetsPage() {
   // Memoized expensive calculations
   const assetsWithData = useMemo(() => {
     if (!filesData?.files || !filesData?.dbdata) return [];
-    
-    // Filter files that have corresponding dbdata
+
+  // Filter files that have corresponding dbdata
     const filesWithDbData = filesData.files.filter((filename: string) => 
-      filesData.dbdata?.some((dbItem: any) => dbItem.name === filename)
+    filesData.dbdata?.some((dbItem: any) => dbItem.name === filename)
     );
 
-    // Map files to their corresponding dbdata
+  // Map files to their corresponding dbdata
     return filesWithDbData.map((filename: string) => {
-      const dbItem = filesData.dbdata.find((item: any) => item.name === filename);
-      return {
-        _id: dbItem._id,
-        name: filename,
-        type: dbItem.type,
-        size: dbItem.size,
-        duration: dbItem.duration,
-        resolution: dbItem.resolution,
-        thumbnail: dbItem.thumbnail,
-        createdAt: dbItem.createdAt,
-        playlists: dbItem.playlists,
-        labels: dbItem.labels,
-        validity: dbItem.validity,
-        url: `/media/${filename}`,
-        fullPath: filename
-      };
-    });
+    const dbItem = filesData.dbdata.find((item: any) => item.name === filename);
+    return {
+      _id: dbItem._id,
+      name: filename,
+      type: dbItem.type,
+      size: dbItem.size,
+      duration: dbItem.duration,
+      resolution: dbItem.resolution,
+      thumbnail: dbItem.thumbnail,
+      createdAt: dbItem.createdAt,
+      playlists: dbItem.playlists,
+      labels: dbItem.labels,
+      validity: dbItem.validity,
+      url: `/media/${filename}`,
+      fullPath: filename
+    };
+  });
   }, [filesData?.files, filesData?.dbdata]);
+
+  // Filtered assets based on search term
+  const filteredAssets = useMemo(() => {
+    if (!searchTerm.trim()) return assetsWithData;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return assetsWithData.filter((asset: any) => {
+      return (
+        asset.name.toLowerCase().includes(searchLower) ||
+        asset.type.toLowerCase().includes(searchLower) ||
+        (asset.playlists && asset.playlists.some((playlist: string) => 
+          playlist.toLowerCase().includes(searchLower)
+        )) ||
+        (asset.labels && asset.labels.some((label: string) => 
+          label.toLowerCase().includes(searchLower)
+        ))
+      );
+    });
+  }, [assetsWithData, searchTerm]);
 
   // Memoized event handlers
   const handleViewAsset = useCallback((asset: any) => {
@@ -428,12 +465,15 @@ export default function AssetsPage() {
         // Exit editing mode
         setEditingAsset(null);
         setEditedName('');
+        
+        // Show success toast
+        toast.success(response.message || 'Asset renamed successfully');
       } else {
-        throw new Error('Failed to rename asset');
+        toast.error(response.message || 'Failed to rename asset');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error renaming asset:', error);
-      // You might want to show an error message to the user here
+      toast.error(error.response?.data?.message || 'Failed to rename asset');
     }
   }, [editedName]);
 
@@ -611,14 +651,30 @@ export default function AssetsPage() {
     setPreselectedFileType(null);
   };
 
+  const handleSelectAll = useCallback(() => {
+    if (selectedAssets.length === filteredAssets.length) {
+      setSelectedAssets([]);
+    } else {
+      setSelectedAssets(filteredAssets.map((asset: any) => asset._id));
+    }
+  }, [selectedAssets.length, filteredAssets]);
+
+  const handleAssetSelect = useCallback((assetId: string) => {
+    setSelectedAssets(prev => 
+      prev.includes(assetId) 
+        ? prev.filter(id => id !== assetId)
+        : [...prev, assetId]
+    );
+  }, []);
+
   return (
-    <div className="w-full h-full">
-      <div className="flex items-center justify-between mb-6 p-6">
-        <h1 className="text-2xl font-bold">Assets</h1>
+    <div className="w-full h-full p-4">
+        <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-sidebar border border-gray-200">
+        <div className="flex items-center space-x-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
+                <ArrowUpTrayIcon className="w-4 h-4" />
               Upload Asset
             </Button>
           </DropdownMenuTrigger>
@@ -637,30 +693,70 @@ export default function AssetsPage() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+          <Input 
+            type="text" 
+            placeholder="Search assets..." 
+            className="w-64"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="icon" title="Filter">
+            <FunnelIcon className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="icon" title="Categories">
+            <TagIcon className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
       
       {loading ? (
         <div className="p-6">Loading...</div>
       ) : filesData ? (
-        <div className="w-full">
-          <Table className="w-full">
+         <div className="w-full bg-sidebar rounded-md p-4 border border-gray-200">
+          <Table className="w-full bg-white rounded-md">
+            <TableHeader>
+              <TableRow>
+                <TableHead >
+                  <Checkbox 
+                    checked={selectedAssets.length === filteredAssets.length && filteredAssets.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+                <TableHead >Name</TableHead>
+                <TableHead >Type</TableHead>
+                <TableHead >Categories</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
-              {assetsWithData.map((asset: any) => (
-                <AssetRow
-                  key={asset._id}
-                  asset={asset}
-                  editingAsset={editingAsset}
-                  editedName={editedName}
-                  onAssetClick={handleAssetClick}
-                  onEditAsset={handleEditAsset}
-                  onViewAsset={handleViewAsset}
-                  onDeleteAsset={handleDeleteAsset}
-                  onValidityOpen={handleValidityOpen}
-                  onNameChange={handleNameChange}
-                  onSaveAssetName={handleSaveAssetName}
-                  onCancelEdit={handleCancelEdit}
-                />
-              ))}
+              {filteredAssets.length > 0 ? (
+                filteredAssets.map((asset: any) => (
+                  <AssetRow
+                    key={asset._id}
+                    asset={asset}
+                    editingAsset={editingAsset}
+                    editedName={editedName}
+                    onAssetClick={handleAssetClick}
+                    onEditAsset={handleEditAsset}
+                    onViewAsset={handleViewAsset}
+                    onDeleteAsset={handleDeleteAsset}
+                    onValidityOpen={handleValidityOpen}
+                    onNameChange={handleNameChange}
+                    onSaveAssetName={handleSaveAssetName}
+                    onCancelEdit={handleCancelEdit}
+                    selectedAssets={selectedAssets}
+                    onAssetSelect={handleAssetSelect}
+                  />
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    {searchTerm ? `No assets found matching "${searchTerm}"` : 'No assets available'}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
@@ -670,7 +766,7 @@ export default function AssetsPage() {
 
       {/* Validity Dialog */}
       {validityDialogOpen && (
-        <Suspense fallback={<div>Loading dialog...</div>}>
+        <Suspense fallback={<></>}>
           <ValidityDialog
             open={validityDialogOpen}
             onOpenChange={setValidityDialogOpen}
@@ -702,7 +798,7 @@ export default function AssetsPage() {
 
       {/* Upload Status Dialog */}
       {uploadDialogOpen && (
-        <Suspense fallback={<div>Loading upload dialog...</div>}>
+        <Suspense fallback={<></>}>
           <UploadStatusDialog
             open={uploadDialogOpen}
             onOpenChange={handleDialogClose}
@@ -716,7 +812,7 @@ export default function AssetsPage() {
 
       {/* Add Link Dialog */}
       {addLinkDialogOpen && (
-        <Suspense fallback={<div>Loading add link dialog...</div>}>
+        <Suspense fallback={<></>}>
           <AddLinkDialog
             open={addLinkDialogOpen}
             onOpenChange={handleCloseAddDialog}

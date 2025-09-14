@@ -10,11 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { 
-  Calendar,
-  Settings,
-  MessageSquare,
-  Play
-} from 'lucide-react';
+  CalendarDaysIcon,
+  Cog6ToothIcon,
+  ChatBubbleLeftIcon,
+  PlayIcon
+} from '@heroicons/react/24/outline';
 // Lazy load dialog components
 const TickerDialog = lazy(() => import('../components/TickerDialog'));
 const EmergencyMessageDialog = lazy(() => import('../components/EmergencyMessageDialog'));
@@ -108,23 +108,23 @@ export default function GroupDetailPage({ params }: GroupDetailPageProps) {
         <h1 className="text-2xl font-bold">Group: {currentGroup?.name || groupName}</h1>
         <div className="flex items-center space-x-3">
           <Button onClick={() => setTickerDialogOpen(true)} variant="outline">
-            <MessageSquare className="w-4 h-4 mr-2" />
+            <ChatBubbleLeftIcon className="w-4 h-4 mr-2" />
             Group Ticker
           </Button>
           <Button onClick={() => setEmergencyMessageOpen(true)} variant="outline">
-            <MessageSquare className="w-4 h-4 mr-2" />
+            <ChatBubbleLeftIcon className="w-4 h-4 mr-2" />
             Emergency Message
           </Button>
           <Button variant="outline">
-            <Calendar className="w-4 h-4 mr-2" />
+            <CalendarDaysIcon className="w-4 h-4 mr-2" />
             View Schedule
           </Button>
           <Button onClick={() => setSettingsDialogOpen(true)} variant="outline">
-            <Settings className="w-4 h-4 mr-2" />
+            <Cog6ToothIcon className="w-4 h-4 mr-2" />
             Settings
           </Button>
           <Button onClick={handleDeploy} variant="default">
-            <Play className="w-4 h-4 mr-2" />
+            <PlayIcon className="w-4 h-4 mr-2" />
             DEPLOY
           </Button>
         </div>

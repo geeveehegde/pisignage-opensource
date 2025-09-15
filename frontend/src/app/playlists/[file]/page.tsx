@@ -2,7 +2,8 @@
 
 import { useEffect, useState, use, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { playlistAPI, assetAPI, API_BASE_URL } from '@/lib/api';
+import { playlistAPI, assetAPI } from '@/lib/api';
+import { API_CONFIG } from '@/lib/constants';
 import type { Playlist } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -272,7 +273,7 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
                         <div className="flex-shrink-0">
                           {assetData?.thumbnail ? (
                             <img 
-                              src={`${API_BASE_URL}${assetData.thumbnail}`}
+                              src={`${API_CONFIG.BASE_URL}${assetData.thumbnail}`}
                               alt={file}
                               loading="lazy"
                               className="w-12 h-12 object-cover rounded-lg"

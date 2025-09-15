@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
-import { API_BASE_URL } from '@/lib/api';
+import { API_CONFIG } from '@/lib/constants';
 
 interface ServerConfig {
   version: string;
@@ -22,7 +22,7 @@ export default function Topbar() {
   useEffect(() => {
     const fetchServerConfig = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/serverconfig/`,{
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/serverconfig/`,{
           credentials: 'include'
         });
         if (response.ok) {

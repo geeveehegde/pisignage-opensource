@@ -9,12 +9,11 @@ import type {
 import type { GetPlayersParams } from '@/app/players/lib/types';
 import type { Group } from '@/app/groups/lib/types';
 import type { Playlist } from '@/app/playlists/lib/types';
-
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+import { API_CONFIG } from './constants';
 
 // Create axios instance with credentials
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_CONFIG.BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

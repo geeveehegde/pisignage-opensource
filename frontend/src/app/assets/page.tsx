@@ -30,10 +30,85 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 // Lazy load dialog components
 const ValidityDialog = lazy(() => import('./components/ValidityDialog'));
 const UploadStatusDialog = lazy(() => import('./components/UploadStatusDialog'));
 const AddLinkDialog = lazy(() => import('./components/AddLinkDialog'));
+const Label = lazy(() => import('./components/Label'));
+
+// Helper function to get icon for file type
+const getTypeIcon = (type?: string) => {
+  if (!type) return <div className="w-3 h-3 bg-gray-400 rounded-sm" />;
+  
+  const typeLower = type.toLowerCase();
+  
+  // Video types
+  if (typeLower.includes('video') || typeLower.includes('mp4') || typeLower.includes('avi') || typeLower.includes('mov') || typeLower === '.tv') {
+    return (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+      </svg>
+    );
+  }
+  
+  // Image types
+  if (typeLower.includes('image') || typeLower.includes('jpg') || typeLower.includes('jpeg') || typeLower.includes('png') || typeLower.includes('gif')) {
+    return (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+      </svg>
+    );
+  }
+  
+  // Audio types
+  if (typeLower.includes('audio') || typeLower.includes('mp3') || typeLower.includes('wav')) {
+    return (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+      </svg>
+    );
+  }
+  
+  // Document types
+  if (typeLower.includes('document') || typeLower.includes('pdf') || typeLower.includes('doc')) {
+    return (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+      </svg>
+    );
+  }
+  
+  // Stream types
+  if (typeLower === '.stream' || typeLower.includes('stream')) {
+    return (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+      </svg>
+    );
+  }
+  
+  // Link types
+  if (typeLower === '.link' || typeLower.includes('link')) {
+    return (
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+      </svg>
+    );
+  }
+  
+  // Default icon
+  return (
+    <div className="w-3 h-3 bg-gray-400 rounded-sm" />
+  );
+};
 
 // Memoized Thumbnail Component
 const AssetThumbnail = memo(({ 
@@ -122,11 +197,8 @@ const AssetInfo = memo(({
       >
         {asset.name}
       </div>
-      <div className="text-xs text-gray-400">
-        {asset.resolution ? `${asset.resolution.width}x${asset.resolution.height}` : 'Unknown resolution'}
-      </div>
-      <div className="text-xs text-gray-400">
-        {asset.size}, {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
+      <div className="text-sm text-gray-400">
+        {asset.resolution ? `${asset.resolution.width}x${asset.resolution.height} • ` : ''}{asset.size}, {asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown'}
       </div>
     </>
   );
@@ -241,9 +313,9 @@ const AssetRow = memo(({
   const handleSaveAssetName = useCallback(() => onSaveAssetName(asset), [onSaveAssetName, asset]);
 
   return (
-    <TableRow key={asset._id} className="border-b border-gray-200">
+    <TableRow key={asset._id} className="border-b border-gray-200 py-2">
       {/* Checkbox */}
-      <TableCell>
+      <TableCell className="p-4">
         <Checkbox 
           checked={selectedAssets.includes(asset._id)}
           onCheckedChange={() => onAssetSelect(asset._id)}
@@ -251,7 +323,7 @@ const AssetRow = memo(({
       </TableCell>
       
       {/* Name */}
-      <TableCell className="py-4">
+      <TableCell className="p-4">
         <div className="flex items-center space-x-4">
           {/* Thumbnail */}
           <AssetThumbnail
@@ -276,12 +348,15 @@ const AssetRow = memo(({
       </TableCell>
       
       {/* Type */}
-      <TableCell>
-        <span className="text-sm text-gray-600">{asset.type}</span>
+      <TableCell className="p-4">
+        <Badge variant="secondary" className="flex items-center gap-1">
+          {getTypeIcon(asset.type)}
+          {asset.type}
+        </Badge>
       </TableCell>
       
       {/* Categories */}
-      <TableCell>
+      <TableCell className="p-4">
         {asset.playlists && asset.playlists.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {asset.playlists.slice(0, 2).map((playlist: string, index: number) => (
@@ -299,7 +374,7 @@ const AssetRow = memo(({
       </TableCell>
       
       {/* Actions */}
-      <TableCell>
+      <TableCell className="p-4">
         <AssetActions
           asset={asset}
           onView={handleViewAsset}
@@ -316,6 +391,7 @@ const AssetRow = memo(({
     prevProps.asset._id === nextProps.asset._id &&
     prevProps.asset.name === nextProps.asset.name &&
     prevProps.asset.validity === nextProps.asset.validity &&
+    prevProps.asset.playlists === nextProps.asset.playlists &&
     prevProps.editingAsset?._id === nextProps.editingAsset?._id &&
     prevProps.editedName === nextProps.editedName &&
     prevProps.selectedAssets.includes(prevProps.asset._id) === nextProps.selectedAssets.includes(nextProps.asset._id)
@@ -344,6 +420,7 @@ export default function AssetsPage() {
   const [preselectedFileType, setPreselectedFileType] = useState<string | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoriesSheetOpen, setCategoriesSheetOpen] = useState(false);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -667,9 +744,13 @@ export default function AssetsPage() {
     );
   }, []);
 
+  const handleCategoriesClick = useCallback(() => {
+    setCategoriesSheetOpen(true);
+  }, []);
+
   return (
     <div className="w-full h-full p-4">
-        <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-sidebar border border-gray-200">
+        <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-secondary">
         <div className="flex items-center space-x-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -705,7 +786,7 @@ export default function AssetsPage() {
           <Button variant="outline" size="icon" title="Filter">
             <FunnelIcon className="w-4 h-4" />
           </Button>
-          <Button variant="outline" size="icon" title="Categories">
+          <Button variant="outline" size="icon" title="Categories" onClick={handleCategoriesClick}>
             <TagIcon className="w-4 h-4" />
           </Button>
         </div>
@@ -714,20 +795,20 @@ export default function AssetsPage() {
       {loading ? (
         <div className="p-6">Loading...</div>
       ) : filesData ? (
-         <div className="w-full bg-sidebar rounded-md p-4 border border-gray-200">
+         <div className="w-full bg-secondary rounded-md p-4">
           <Table className="w-full bg-white rounded-md">
             <TableHeader>
-              <TableRow>
-                <TableHead >
+              <TableRow className='space-y-2'>
+                <TableHead className="p-4">
                   <Checkbox 
                     checked={selectedAssets.length === filteredAssets.length && filteredAssets.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
-                <TableHead >Name</TableHead>
-                <TableHead >Type</TableHead>
-                <TableHead >Categories</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="p-4">Name</TableHead>
+                <TableHead className="p-4">Type</TableHead>
+                <TableHead className="p-4">Categories</TableHead>
+                <TableHead className="p-4"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -752,7 +833,7 @@ export default function AssetsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={5} className="text-center p-8 text-gray-500">
                     {searchTerm ? `No assets found matching "${searchTerm}"` : 'No assets available'}
                   </TableCell>
                 </TableRow>
@@ -821,6 +902,19 @@ export default function AssetsPage() {
           />
         </Suspense>
       )}
+
+      {/* Categories Sheet */}
+      <Sheet open={categoriesSheetOpen} onOpenChange={setCategoriesSheetOpen}>
+        <SheetContent side="right">
+          <SheetHeader>
+            <SheetTitle>Manage Categories</SheetTitle>
+            <Input type="text" placeholder="Search categories..." className="w-full" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          </SheetHeader>
+          <Suspense fallback={<div className="mt-6 text-center text-gray-500">Loading...</div>}>
+            <Label />
+          </Suspense>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 } 

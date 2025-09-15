@@ -48,7 +48,7 @@ export default function Topbar() {
   };
 
   return (
-    <div className="w-full bg-sidebar border-b border-gray-200 px-4 py-3">
+    <div className="w-full bg-secondary px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Left side - Follow us message and version info stacked */}
         <div className="flex flex-col space-y-1">

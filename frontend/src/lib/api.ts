@@ -119,8 +119,9 @@ export const assetAPI = {
           return '.rss';
         case 'Streaming':
         case 'Audio Streaming':
-        case 'Livestreaming or YouTube':
           return '.stream';
+        case 'Livestreaming or YouTube':
+          return '.tv';
         case 'Web link (shown in iframe)':
         case 'Web page (supports cross origin links)':
         default:
@@ -293,6 +294,15 @@ export const groupAPI = {
   // Delete group
   deleteGroup: async (groupId: string) => {
     const response = await api.delete(`/api/groups/${groupId}`);
+    return response.data;
+  },
+};
+
+// Labels API functions
+export const labelsAPI = {
+  // Get all labels
+  getLabels: async () => {
+    const response = await api.get('/api/labels');
     return response.data;
   },
 };

@@ -230,7 +230,7 @@ export default function PlayersPage() {
 
   return (
     <div className="w-full h-full p-4">
-      <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-sidebar border border-gray-200">
+      <div className="flex items-center justify-between rounded-md mb-6 p-6 bg-secondary">
         <div className="flex items-center space-x-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -270,7 +270,7 @@ export default function PlayersPage() {
       {loading ? (
         <div className="p-6">Loading...</div>
       ) : players ? (
-        <div className="w-full bg-sidebar rounded-md p-4 border border-gray-200">
+        <div className="w-full bg-secondary rounded-md p-4">
           <Table className="w-full bg-white rounded-md">
             <TableHeader>
               <TableRow>

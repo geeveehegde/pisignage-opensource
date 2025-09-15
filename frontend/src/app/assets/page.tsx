@@ -2,7 +2,8 @@
 
 import { useEffect, useState, lazy, Suspense, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { assetAPI, API_BASE_URL } from '@/lib/api';
+import { assetAPI } from '@/lib/api';
+import { API_CONFIG } from '@/lib/constants';
 import type { Asset, UploadFile, PostUploadData, CreateLinkData } from './lib/types';
 import {
   Table,
@@ -127,7 +128,7 @@ const AssetThumbnail = memo(({
     >
       {thumbnail ? (
         <img 
-          src={`${API_BASE_URL}${thumbnail}`}
+          src={`${API_CONFIG.BASE_URL}${thumbnail}`}
           alt={name}
           loading="lazy"
           className="w-12 h-10 object-cover rounded-lg"
@@ -656,7 +657,7 @@ export default function AssetsPage() {
           console.error('Upload failed');
         };
         
-        xhr.open('POST', `${API_BASE_URL}/api/files`);
+        xhr.open('POST', `${API_CONFIG.BASE_URL}/api/files`);
         xhr.withCredentials = true;
         xhr.send(formData);
         

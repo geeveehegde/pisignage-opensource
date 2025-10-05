@@ -10,7 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 
-export const createApp = () => {
+export const createApp = (nextHandler) => {
     const app = express();
 
     app.use(cors({
@@ -61,6 +61,13 @@ export const createApp = () => {
             });
 
             app.use(routes);
+
+            // Handle Next.js requests
+            if (nextHandler) {
+                app.all('/{*splat}', (req, res) => {
+                    return nextHandler(req, res);
+                });
+            }
 
     return app;
 };

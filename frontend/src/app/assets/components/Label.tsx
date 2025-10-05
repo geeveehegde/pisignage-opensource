@@ -27,9 +27,9 @@ export default function Label({ categories }: LabelProps) {
         const response = await labelsAPI.getLabels();
         const labelsData = response.data || response || [];
         setLabels(Array.isArray(labelsData) ? labelsData : []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching labels:', err);
-        setError(err.response?.data?.message || 'Failed to fetch labels');
+        setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch labels');
         // Fallback to categories prop if API fails
         if (categories) {
           setLabels(categories.map(name => ({ _id: name, name, createdAt: '', __v: 0 })));

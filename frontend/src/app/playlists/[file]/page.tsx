@@ -4,6 +4,7 @@ import { useEffect, useState, use, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { playlistAPI, assetAPI } from '@/lib/api';
 import { API_CONFIG } from '@/lib/constants';
+import Image from 'next/image';
 import type { Playlist } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,7 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
   
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [allFiles, setAllFiles] = useState<string[]>([]);
-  const [allAssets, setAllAssets] = useState<any[]>([]);
+  const [allAssets, setAllAssets] = useState<Record<string, unknown>[]>([]);
   const [assetDurations, setAssetDurations] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,14 +52,29 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
       setPlaylist(playlistResponse.data);
       setAllFiles(filesResponse.data?.data?.files || []);
       setAllAssets(filesResponse.data?.data?.dbdata || []);
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to fetch playlist details');
+    } catch (error: unknown) {
+      setError((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch playlist details');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveSettings = async (settings: any) => {
+  const handleSaveSettings = async (settings: {
+    tickerEnable: boolean;
+    tickerBehavior: string;
+    tickerTextSpeed: number;
+    useRssFeed: boolean;
+    rssLink: string;
+    rssFeedDelay: number;
+    audioEnable: boolean;
+    audioRandom: boolean;
+    audioVolume: number;
+    adPlaylist: boolean;
+    adCount: number;
+    adInterval: number;
+    layout: string;
+    templateName: string;
+  }) => {
     try {
       // Update playlist with new settings
       const updatedPlaylist = {
@@ -272,10 +288,11 @@ export default function PlaylistDetailPage({ params }: PlaylistDetailPageProps) 
                         {/* Thumbnail */}
                         <div className="flex-shrink-0">
                           {assetData?.thumbnail ? (
-                            <img 
+                            <Image 
                               src={`${API_CONFIG.BASE_URL}${assetData.thumbnail}`}
                               alt={file}
-                              loading="lazy"
+                              width={48}
+                              height={48}
                               className="w-12 h-12 object-cover rounded-lg"
                             />
                           ) : (

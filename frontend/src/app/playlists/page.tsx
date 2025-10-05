@@ -136,8 +136,8 @@ export default function PlaylistsPage() {
       const response = await playlistAPI.getPlaylists();
       const playlistsData = response.data || [];
       setPlaylists(playlistsData);
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to fetch playlists');
+    } catch (error: unknown) {
+      setError((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch playlists');
     } finally {
       setIsLoading(false);
     }

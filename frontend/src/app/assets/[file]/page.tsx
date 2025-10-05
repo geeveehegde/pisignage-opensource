@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { assetAPI } from '@/lib/api';
 import { MediaTypeUtils, API_CONFIG } from '@/lib/constants';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeftIcon, ArrowDownTrayIcon, EyeIcon, PencilIcon, CheckIcon, PlusIcon, CalendarDaysIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -18,7 +19,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
   const router = useRouter();
   const resolvedParams = use(params);
   const filename = decodeURIComponent(resolvedParams.file);
-  const [asset, setAsset] = useState<any>(null);
+  const [asset, setAsset] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -42,7 +43,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
         
         // First, get basic asset info from files API
         const filesResponse = await assetAPI.getFiles();
-        const assetData = filesResponse.data.dbdata.find((item: any) => item.name === filename);
+        const assetData = filesResponse.data.dbdata.find((item: Record<string, unknown>) => item.name === filename);
         console.log('Asset data:', assetData);
         if (assetData) {
           let detailedAssetData = assetData;
@@ -112,13 +113,15 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
   };
 
   const handleSaveLinkConfiguration = async () => {
+    if (!asset) return;
+    
     try {
       // Update the link configuration
       const payload = {
-        categories: asset.categories || [],
+        categories: (asset as { categories?: unknown[] }).categories || [],
         details: {
-          name: asset.name,
-          type: asset.type,
+          name: (asset as { name?: string }).name || '',
+          type: (asset as { type?: string }).type || '',
           link: editedLinkData.link,
           zoom: editedLinkData.zoom,
           duration: editedLinkData.duration,
@@ -173,9 +176,9 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
     );
   }
 
-  const isImage = MediaTypeUtils.isImage(asset.type);
-  const isVideo = MediaTypeUtils.isVideo(asset.type);
-  const isLink = asset.type === '.link';
+  const isImage = MediaTypeUtils.isImage((asset as { type?: string }).type || '');
+  const isVideo = MediaTypeUtils.isVideo((asset as { type?: string }).type || '');
+  const isLink = (asset as { type?: string }).type === '.link';
 
   return (
     <div className="w-full h-full p-4">
@@ -212,15 +215,16 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
           {/* Main Content */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h1 className="text-xl font-bold text-gray-900 mb-6">{asset.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-6">{(asset as { name?: string }).name || 'Unknown Asset'}</h1>
               
               {/* Image Display for Image Assets */}
               {isImage && (
                 <div className="mb-6">
-                  <img 
+                  <Image 
                     src={`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MEDIA}/${filename}`}
-                    alt={asset.name}
-                    loading="lazy"
+                    alt={(asset as { name?: string }).name || 'Asset'}
+                    width={800}
+                    height={600}
                     className="w-full h-auto max-h-[70vh] object-contain rounded-lg border border-gray-200 shadow-sm"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
@@ -276,7 +280,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
                         />
                       ) : (
                         <p className="text-gray-900 bg-white px-3 py-2 rounded border">
-                          {asset.details?.link || 'No link specified'}
+                          {(asset as { details?: { link?: string } }).details?.link || 'No link specified'}
                         </p>
                       )}
                     </div>
@@ -296,7 +300,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
                         />
                       ) : (
                         <p className="text-gray-900 bg-white px-3 py-2 rounded border w-32">
-                          {asset.details?.zoom || 1}
+                          {(asset as { details?: { zoom?: number } }).details?.zoom || 1}
                         </p>
                       )}
                     </div>
@@ -315,7 +319,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
                         />
                       ) : (
                         <p className="text-gray-900 bg-white px-3 py-2 rounded border w-48">
-                          {asset.details?.duration || 'No limit'}
+                          {(asset as { details?: { duration?: string | number } }).details?.duration || 'No limit'}
                         </p>
                       )}
                     </div>
@@ -334,7 +338,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
                         </select>
                       ) : (
                         <p className="text-gray-900 bg-white px-3 py-2 rounded border w-32">
-                          {asset.details?.hideTitle || 'title'}
+                          {(asset as { details?: { hideTitle?: string } }).details?.hideTitle || 'title'}
                         </p>
                       )}
                     </div>
@@ -349,7 +353,7 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
             {/* Type Section */}
             <div className="bg-secondary rounded-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Type</h3>
-              <p className="text-gray-900 text-lg">{asset.type || 'Unknown'}</p>
+              <p className="text-gray-900 text-lg">{(asset as { type?: string }).type || 'Unknown'}</p>
             </div>
 
             {/* Details Section */}
@@ -358,25 +362,25 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Size</label>
-                  <p className="text-gray-900">{asset.size || 'Unknown'}</p>
+                  <p className="text-gray-900">{(asset as { size?: string }).size || 'Unknown'}</p>
                 </div>
-                {asset.resolution && (
+                {(asset as { resolution?: { width?: string; height?: string } }).resolution && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Resolution</label>
-                    <p className="text-gray-900">{asset.resolution.width} x {asset.resolution.height}</p>
+                    <p className="text-gray-900">{(asset as { resolution?: { width?: string; height?: string } }).resolution?.width} x {(asset as { resolution?: { width?: string; height?: string } }).resolution?.height}</p>
                   </div>
                 )}
-                {asset.duration && (
+                {(asset as { duration?: string | number }).duration && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Duration</label>
-                    <p className="text-gray-900">{asset.duration}</p>
+                    <p className="text-gray-900">{(asset as { duration?: string | number }).duration}</p>
                   </div>
                 )}
-                {asset.createdAt && (
+                {(asset as { createdAt?: string }).createdAt && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Created</label>
                     <p className="text-gray-900">
-                      {new Date(asset.createdAt).toLocaleDateString('en-US', {
+                      {new Date((asset as { createdAt?: string }).createdAt!).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -392,9 +396,9 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
             {/* Categories Section */}
             <div className="bg-secondary rounded-lg p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Categories</h3>
-              {asset.playlists && asset.playlists.length > 0 ? (
+              {(asset as { playlists?: string[] }).playlists && (asset as { playlists?: string[] }).playlists!.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {asset.playlists.map((playlist: string, index: number) => (
+                  {(asset as { playlists?: string[] }).playlists!.map((playlist: string, index: number) => (
                     <span 
                       key={index}
                       className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
@@ -409,13 +413,13 @@ export default function AssetDetailsPage({ params }: AssetDetailsPageProps) {
             </div>
 
             {/* Validity Section (if applicable) */}
-            {asset.validity && asset.validity.enable && (
+            {(asset as { validity?: { enable?: boolean } }).validity && (asset as { validity?: { enable?: boolean } }).validity!.enable && (
               <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Validity Period</h3>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-green-600">
-                    {new Date(asset.validity.startdate).toLocaleDateString()} - {new Date(asset.validity.enddate).toLocaleDateString()}
+                    {new Date((asset as { validity?: { startdate?: string } }).validity!.startdate!).toLocaleDateString()} - {new Date((asset as { validity?: { enddate?: string } }).validity!.enddate!).toLocaleDateString()}
                   </span>
                 </div>
               </div>

@@ -13,12 +13,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { assetAPI } from '@/lib/api';
+import type { Asset } from '../lib/types';
 
 interface ValidityDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  asset: any;
-  onSave: (asset: any, validityData: any) => void;
+  asset: Asset;
+  onSave: (asset: Asset, validityData: Record<string, unknown>) => void;
 }
 
 export default function ValidityDialog({ open, onOpenChange, asset, onSave }: ValidityDialogProps) {

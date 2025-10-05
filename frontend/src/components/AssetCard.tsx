@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { 
   PhotoIcon, 
   VideoCameraIcon, 
@@ -71,9 +72,11 @@ export default function AssetCard({ asset, onEdit, onDelete, onView }: AssetCard
       {/* Thumbnail/Preview */}
       <div className="relative h-48 bg-gray-100 flex items-center justify-center">
         {asset.thumbnail ? (
-          <img
+          <Image
             src={asset.thumbnail}
             alt={asset.name}
+            width={300}
+            height={192}
             className="w-full h-full object-cover"
           />
         ) : (

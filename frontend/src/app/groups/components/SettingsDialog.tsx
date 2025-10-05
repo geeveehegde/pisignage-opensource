@@ -82,7 +82,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     enableGPIO: false
   });
 
-  const updateSetting = (key: keyof Settings, value: any) => {
+  const updateSetting = (key: keyof Settings, value: unknown) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 

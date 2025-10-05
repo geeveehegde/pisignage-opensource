@@ -2,13 +2,8 @@ import axios from 'axios';
 import type {
   CreateLinkData,
   PostUploadData,
-  GetAssetsParams,
-  ApiResponse,
-  FilesResponse
 } from '@/app/assets/lib/types';
 import type { GetPlayersParams } from '@/app/players/lib/types';
-import type { Group } from '@/app/groups/lib/types';
-import type { Playlist } from '@/app/playlists/lib/types';
 import { API_CONFIG } from './constants';
 
 // Create axios instance with credentials
@@ -72,7 +67,7 @@ export const assetAPI = {
   },
 
   // Update file data (validity, rename, etc.)
-  updateFile: async (filename: string, data: any) => {
+  updateFile: async (filename: string, data: Record<string, unknown>) => {
     const response = await api.post(`/api/files/${filename}`, data);
     return response.data;
   },
@@ -174,13 +169,13 @@ export const playerAPI = {
   },
 
   // Create new player
-  createPlayer: async (playerData: any) => {
+  createPlayer: async (playerData: Record<string, unknown>) => {
     const response = await api.post('/api/players', playerData);
     return response.data;
   },
 
   // Update player
-  updatePlayer: async (playerId: string, playerData: any) => {
+  updatePlayer: async (playerId: string, playerData: Record<string, unknown>) => {
     const response = await api.post(`/api/players/${playerId}`, playerData);
     return response.data;
   },
@@ -198,13 +193,13 @@ export const playerAPI = {
   },
 
   // Deploy to player
-  deployToPlayer: async (playerId: string, deployOptions: any) => {
+  deployToPlayer: async (playerId: string, deployOptions: Record<string, unknown>) => {
     const response = await api.post(`/api/players/${playerId}/deploy`, deployOptions);
     return response.data;
   },
 
   // Send command to player
-  sendCommand: async (playerId: string, command: string, data?: any) => {
+  sendCommand: async (playerId: string, command: string, data?: Record<string, unknown>) => {
     const response = await api.post(`/api/players/${playerId}/command`, { command, data });
     return response.data;
   },
@@ -231,7 +226,7 @@ export const playlistAPI = {
   },
 
   // Update playlist
-  updatePlaylist: async (playlistName: string, playlistData: any) => {
+  updatePlaylist: async (playlistName: string, playlistData: Record<string, unknown>) => {
     const response = await api.post(`/api/playlists/${playlistName}`, playlistData);
     return response.data;
   },
@@ -252,13 +247,13 @@ export const settingsAPI = {
   },
 
   // Update a single setting
-  updateSetting: async (key: string, value: any) => {
+  updateSetting: async (key: string, value: unknown) => {
     const response = await api.post('/api/settings/', { [key]: value });
     return response.data;
   },
 
   // Update multiple settings
-  updateSettings: async (settings: Record<string, any>) => {
+  updateSettings: async (settings: Record<string, unknown>) => {
     const response = await api.post('/api/settings/', settings);
     return response.data;
   },
@@ -285,7 +280,7 @@ export const groupAPI = {
   },
 
   // Update group
-  updateGroup: async (groupId: string, groupData: any) => {
+  updateGroup: async (groupId: string, groupData: Record<string, unknown>) => {
     const response = await api.post(`/api/groups/${groupId}`, groupData);
     return response.data;
   },

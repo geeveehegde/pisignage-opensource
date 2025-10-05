@@ -40,10 +40,10 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
     try {
       await registerUser(data.email, data.password);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError('root', {
         type: 'manual',
-        message: error.message || 'Registration failed. Please try again.',
+        message: (error as { message?: string })?.message || 'Registration failed. Please try again.',
       });
     } finally {
       setIsLoading(false);

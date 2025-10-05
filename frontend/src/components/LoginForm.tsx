@@ -36,10 +36,10 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
     try {
       await login(data.email, data.password);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError('root', {
         type: 'manual',
-        message: error.message || 'Login failed. Please try again.',
+        message: (error as { message?: string })?.message || 'Login failed. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -105,7 +105,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button
               type="button"
               onClick={onSwitchToRegister}

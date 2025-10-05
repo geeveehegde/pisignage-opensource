@@ -11,7 +11,7 @@ export interface Group {
   alternateContent: boolean;
   timeToStopVideo: number;
   assets: string[];
-  assetsValidity: any[];
+  assetsValidity: Record<string, unknown>[];
   deployedPlaylists: string[];
   deployedAssets: string[];
   enableMpv: boolean;
@@ -109,6 +109,6 @@ export interface EmergencyMessageDialogProps {
 export interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave?: (settings: any) => void;
-  initialData?: any;
+  onSave?: (settings: Record<string, unknown>) => void;
+  initialData?: Record<string, unknown>;
 }

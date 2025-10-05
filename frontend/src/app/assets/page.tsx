@@ -4,6 +4,7 @@ import { useEffect, useState, lazy, Suspense, useMemo, useCallback, memo } from 
 import { useRouter } from 'next/navigation';
 import { assetAPI } from '@/lib/api';
 import { API_CONFIG } from '@/lib/constants';
+import Image from 'next/image';
 import type { Asset, UploadFile, PostUploadData, CreateLinkData } from './lib/types';
 import {
   Table,
@@ -127,10 +128,11 @@ const AssetThumbnail = memo(({
       className="cursor-pointer hover:opacity-80 transition-opacity"
     >
       {thumbnail ? (
-        <img 
+        <Image 
           src={`${API_CONFIG.BASE_URL}${thumbnail}`}
           alt={name}
-          loading="lazy"
+          width={48}
+          height={40}
           className="w-12 h-10 object-cover rounded-lg"
         />
       ) : (
@@ -154,7 +156,7 @@ const AssetInfo = memo(({
   onCancel, 
   onClick 
 }: {
-  asset: any;
+  asset: Asset;
   isEditing: boolean;
   editedName: string;
   onNameChange: (name: string) => void;
@@ -215,7 +217,7 @@ const AssetActions = memo(({
   onDelete, 
   onValidityOpen 
 }: {
-  asset: any;
+  asset: Asset;
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -290,16 +292,16 @@ const AssetRow = memo(({
   selectedAssets,
   onAssetSelect
 }: {
-  asset: any;
-  editingAsset: any;
+  asset: Asset;
+  editingAsset: Asset | null;
   editedName: string;
-  onAssetClick: (asset: any) => void;
-  onEditAsset: (asset: any) => void;
-  onViewAsset: (asset: any) => void;
-  onDeleteAsset: (asset: any) => void;
-  onValidityOpen: (asset: any) => void;
+  onAssetClick: (asset: Asset) => void;
+  onEditAsset: (asset: Asset) => void;
+  onViewAsset: (asset: Asset) => void;
+  onDeleteAsset: (asset: Asset) => void;
+  onValidityOpen: (asset: Asset) => void;
   onNameChange: (name: string) => void;
-  onSaveAssetName: (asset: any) => void;
+  onSaveAssetName: (asset: Asset) => void;
   onCancelEdit: () => void;
   selectedAssets: string[];
   onAssetSelect: (assetId: string) => void;
@@ -314,12 +316,12 @@ const AssetRow = memo(({
   const handleSaveAssetName = useCallback(() => onSaveAssetName(asset), [onSaveAssetName, asset]);
 
   return (
-    <TableRow key={asset._id} className="border-b border-gray-200 py-2">
+    <TableRow key={asset._id || asset.name} className="border-b border-gray-200 py-2">
       {/* Checkbox */}
       <TableCell className="p-4">
         <Checkbox 
-          checked={selectedAssets.includes(asset._id)}
-          onCheckedChange={() => onAssetSelect(asset._id)}
+          checked={selectedAssets.includes(asset._id || '')}
+          onCheckedChange={() => onAssetSelect(asset._id || '')}
         />
       </TableCell>
       
@@ -337,7 +339,7 @@ const AssetRow = memo(({
           <div className="flex-1">
             <AssetInfo
               asset={asset}
-              isEditing={isEditing}
+              isEditing={isEditing || false}
               editedName={editedName}
               onNameChange={onNameChange}
               onSave={handleSaveAssetName}
@@ -395,7 +397,7 @@ const AssetRow = memo(({
     prevProps.asset.playlists === nextProps.asset.playlists &&
     prevProps.editingAsset?._id === nextProps.editingAsset?._id &&
     prevProps.editedName === nextProps.editedName &&
-    prevProps.selectedAssets.includes(prevProps.asset._id) === nextProps.selectedAssets.includes(nextProps.asset._id)
+    prevProps.selectedAssets.includes(prevProps.asset._id || '') === nextProps.selectedAssets.includes(nextProps.asset._id || '')
   );
 });
 
@@ -403,14 +405,14 @@ AssetRow.displayName = 'AssetRow';
 
 export default function AssetsPage() {
   const router = useRouter();
-  const [filesData, setFilesData] = useState<any>(null);
+  const [filesData, setFilesData] = useState<{ files: string[]; dbdata: Record<string, unknown>[] } | null>(null);
   const [loading, setLoading] = useState(false);
   const [validityDialogOpen, setValidityDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<any>(null);
-  const [assetToDelete, setAssetToDelete] = useState<any>(null);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [editingAsset, setEditingAsset] = useState<any>(null);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editedName, setEditedName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -446,26 +448,45 @@ export default function AssetsPage() {
 
   // Filter files that have corresponding dbdata
     const filesWithDbData = filesData.files.filter((filename: string) => 
-    filesData.dbdata?.some((dbItem: any) => dbItem.name === filename)
+    filesData.dbdata?.some((dbItem: Record<string, unknown>) => dbItem.name === filename)
     );
 
   // Map files to their corresponding dbdata
     return filesWithDbData.map((filename: string) => {
-    const dbItem = filesData.dbdata.find((item: any) => item.name === filename);
+    const dbItem = filesData.dbdata.find((item: Record<string, unknown>) => item.name === filename);
+    if (!dbItem) {
+      // Return a default asset if dbItem is not found
+      return {
+        _id: '',
+        name: filename,
+        type: 'unknown',
+        size: '0',
+        duration: 0,
+        resolution: { width: '0', height: '0' },
+        thumbnail: '',
+        createdAt: new Date().toISOString(),
+        playlists: [],
+        labels: [],
+        validity: { enable: false, startdate: '', enddate: '', starthour: 0, endhour: 23 },
+        url: `/media/${filename}`,
+        groupIds: []
+      };
+    }
     return {
-      _id: dbItem._id,
+      _id: (dbItem._id as string) || '',
       name: filename,
-      type: dbItem.type,
-      size: dbItem.size,
-      duration: dbItem.duration,
-      resolution: dbItem.resolution,
-      thumbnail: dbItem.thumbnail,
-      createdAt: dbItem.createdAt,
-      playlists: dbItem.playlists,
-      labels: dbItem.labels,
-      validity: dbItem.validity,
+      type: (dbItem.type as string) || 'unknown',
+      size: (dbItem.size as string) || '0',
+      duration: (dbItem.duration as number) || 0,
+      resolution: (dbItem.resolution as { width: string; height: string }) || { width: '0', height: '0' },
+      thumbnail: (dbItem.thumbnail as string) || '',
+      createdAt: (dbItem.createdAt as string) || new Date().toISOString(),
+      playlists: (dbItem.playlists as string[]) || [],
+      labels: (dbItem.labels as string[]) || [],
+      validity: (dbItem.validity as { enable: boolean; startdate: string; enddate: string; starthour: number; endhour: number }) || { enable: false, startdate: '', enddate: '', starthour: 0, endhour: 23 },
       url: `/media/${filename}`,
-      fullPath: filename
+      fullPath: filename,
+      groupIds: (dbItem.groupIds as string[]) || []
     };
   });
   }, [filesData?.files, filesData?.dbdata]);
@@ -475,7 +496,7 @@ export default function AssetsPage() {
     if (!searchTerm.trim()) return assetsWithData;
     
     const searchLower = searchTerm.toLowerCase();
-    return assetsWithData.filter((asset: any) => {
+    return assetsWithData.filter((asset: Asset) => {
       return (
         asset.name.toLowerCase().includes(searchLower) ||
         asset.type.toLowerCase().includes(searchLower) ||
@@ -490,27 +511,27 @@ export default function AssetsPage() {
   }, [assetsWithData, searchTerm]);
 
   // Memoized event handlers
-  const handleViewAsset = useCallback((asset: any) => {
+  const handleViewAsset = useCallback((asset: Asset) => {
     router.push(`/assets/${encodeURIComponent(asset.name)}`);
   }, [router]);
 
-  const handleEditAsset = useCallback((asset: any) => {
+  const handleEditAsset = useCallback((asset: Asset) => {
     setEditingAsset(asset);
     // Remove file extension for editing
     const nameWithoutExtension = asset.name.replace(/\.[^/.]+$/, '');
     setEditedName(nameWithoutExtension);
   }, []);
 
-  const handleDeleteAsset = useCallback((asset: any) => {
+  const handleDeleteAsset = useCallback((asset: Asset) => {
     setAssetToDelete(asset);
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleAssetClick = useCallback((asset: any) => {
+  const handleAssetClick = useCallback((asset: Asset) => {
     router.push(`/assets/${encodeURIComponent(asset.name)}`);
   }, [router]);
 
-  const handleValidityOpen = useCallback((asset: any) => {
+  const handleValidityOpen = useCallback((asset: Asset) => {
     setSelectedAsset(asset);
     setValidityDialogOpen(true);
   }, []);
@@ -519,7 +540,7 @@ export default function AssetsPage() {
     setEditedName(name);
   }, []);
 
-  const handleSaveAssetName = useCallback(async (asset: any) => {
+  const handleSaveAssetName = useCallback(async (asset: Asset) => {
     try {
       // Get the file extension from the original name
       const fileExtension = asset.name.match(/\.[^/.]+$/)?.[0] || '';
@@ -530,15 +551,18 @@ export default function AssetsPage() {
       
       if (response.success) {
         // Update local state only after successful API call
-        setFilesData((prev: any) => ({
-          ...prev,
-          files: prev.files.map((filename: string) => 
-            filename === asset.name ? newFullName : filename
-          ),
-          dbdata: prev.dbdata.map((item: any) => 
-            item.name === asset.name ? { ...item, name: newFullName } : item
-          )
-        }));
+        setFilesData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            files: prev.files.map((filename: string) => 
+              filename === asset.name ? newFullName : filename
+            ),
+            dbdata: prev.dbdata.map((item: Record<string, unknown>) => 
+              item.name === asset.name ? { ...item, name: newFullName } : item
+            )
+          };
+        });
         
         // Exit editing mode
         setEditingAsset(null);
@@ -549,9 +573,9 @@ export default function AssetsPage() {
       } else {
         toast.error(response.message || 'Failed to rename asset');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error renaming asset:', error);
-      toast.error(error.response?.data?.message || 'Failed to rename asset');
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to rename asset');
     }
   }, [editedName]);
 
@@ -569,11 +593,14 @@ export default function AssetsPage() {
       
       if (response.success) {
         // Remove the deleted asset from the local state
-        setFilesData((prev: any) => ({
-          ...prev,
-          files: prev.files.filter((filename: string) => filename !== assetToDelete.name),
-          dbdata: prev.dbdata.filter((item: any) => item.name !== assetToDelete.name)
-        }));
+        setFilesData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            files: prev.files.filter((filename: string) => filename !== assetToDelete.name),
+            dbdata: prev.dbdata.filter((item: Record<string, unknown>) => item.name !== assetToDelete.name)
+          };
+        });
         
         // Close the dialog
         setDeleteDialogOpen(false);
@@ -590,7 +617,7 @@ export default function AssetsPage() {
   };
 
 
-  const saveValidity = (asset: any, validityData: any) => {
+  const saveValidity = (asset: Asset, validityData: Record<string, unknown>) => {
     console.log('Saving validity for:', asset.name, validityData);
     // Implement save logic here
   };
@@ -733,7 +760,7 @@ export default function AssetsPage() {
     if (selectedAssets.length === filteredAssets.length) {
       setSelectedAssets([]);
     } else {
-      setSelectedAssets(filteredAssets.map((asset: any) => asset._id));
+      setSelectedAssets(filteredAssets.map((asset: Asset) => asset._id || '').filter(id => id !== ''));
     }
   }, [selectedAssets.length, filteredAssets]);
 
@@ -814,7 +841,7 @@ export default function AssetsPage() {
             </TableHeader>
             <TableBody>
               {filteredAssets.length > 0 ? (
-                filteredAssets.map((asset: any) => (
+                filteredAssets.map((asset: Asset) => (
                   <AssetRow
                     key={asset._id}
                     asset={asset}
@@ -849,12 +876,14 @@ export default function AssetsPage() {
       {/* Validity Dialog */}
       {validityDialogOpen && (
         <Suspense fallback={<></>}>
-          <ValidityDialog
-            open={validityDialogOpen}
-            onOpenChange={setValidityDialogOpen}
-            asset={selectedAsset}
-            onSave={saveValidity}
-          />
+          {selectedAsset && (
+            <ValidityDialog
+              open={validityDialogOpen}
+              onOpenChange={setValidityDialogOpen}
+              asset={selectedAsset}
+              onSave={saveValidity}
+            />
+          )}
         </Suspense>
       )}
 
@@ -864,7 +893,7 @@ export default function AssetsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{assetToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{assetToDelete?.name}&quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">

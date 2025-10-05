@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   HomeIcon,
@@ -63,9 +64,11 @@ export default function SidebarComponent() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex flex-col items-start space-y-2">
-          <img 
+          <Image 
             src="/pisignage-logo.png" 
             alt="piSignage" 
+            width={120}
+            height={40}
             className="h-10 w-auto object-contain mt-2"
           />
         </div>

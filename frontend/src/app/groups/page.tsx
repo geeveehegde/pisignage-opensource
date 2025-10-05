@@ -136,8 +136,8 @@ export default function GroupsPage() {
       const response = await groupAPI.getGroups();
       const groupsData = response.data || [];
       setGroups(groupsData);
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to fetch groups');
+    } catch (error: unknown) {
+      setError((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch groups');
     } finally {
       setIsLoading(false);
     }

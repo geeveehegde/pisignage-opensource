@@ -26,14 +26,14 @@ export interface Playlist {
   assets: string[];
   layout: string;
   templateName: string;
-  videoWindow?: any;
-  zoneVideoWindow?: any;
-  schedule: any;
+  videoWindow?: Record<string, unknown>;
+  zoneVideoWindow?: Record<string, unknown>;
+  schedule: Record<string, unknown>;
   version?: number;
 }
 
 // API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;

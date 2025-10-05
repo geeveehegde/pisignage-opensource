@@ -13,7 +13,8 @@ export function cn(...inputs: ClassValue[]) {
 interface ServerResponse {
   success?: boolean;
   message?: string;
-  data?: any;
+  data?: unknown;
+  
 }
 
 /**
@@ -39,8 +40,10 @@ export const handleServerResponse = (
  * @param error - Error object from API call
  * @param defaultMessage - Default error message
  */
-export const handleApiError = (error: any, defaultMessage: string = 'An error occurred') => {
-  const message = error.response?.data?.message || error.message || defaultMessage;
+export const handleApiError = (error: unknown, defaultMessage: string = 'An error occurred') => {
+  const message = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || 
+                  (error as { message?: string })?.message || 
+                  defaultMessage;
   toast.error(message);
 };
 
@@ -74,7 +77,7 @@ export const showInfo = (message: string) => {
  * @param messages - Loading, success, and error messages
  */
 export const showLoadingToast = (
-  promise: Promise<any>,
+  promise: Promise<unknown>,
   messages: {
     loading: string;
     success: string;

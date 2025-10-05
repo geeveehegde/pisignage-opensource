@@ -52,8 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userData = await authAPI.login(email, password);
       setUser(userData);
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Login failed');
+    } catch (error: unknown) {
+      throw new Error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Login failed');
     }
   };
 
@@ -61,8 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userData = await authAPI.register(email, password);
       setUser(userData);
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Registration failed');
+    } catch (error: unknown) {
+      throw new Error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Registration failed');
     }
   };
 
@@ -70,8 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authAPI.logout();
       setUser(null);
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Logout failed');
+    } catch (error: unknown) {
+      throw new Error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Logout failed');
     }
   };
 

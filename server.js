@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createWebSocketServer } from './config/websocket.js';
+import next from 'next';
 
 
 const main = async () => {
@@ -39,7 +40,16 @@ const main = async () => {
         }
 
         await mongoose.connect(CONFIG.DB_URL);
-        const server = createServer(createApp());
+        
+        // Initialize Next.js
+        const dev = process.env.NODE_ENV !== 'production';
+        const nextApp = next({ dev, dir: './frontend' });
+        const handle = nextApp.getRequestHandler();
+
+        await nextApp.prepare();
+
+        const app = createApp(handle);
+        const server = createServer(app);
 
         // Initialize WebSocket server
         const wss = createWebSocketServer(server);
@@ -49,6 +59,7 @@ const main = async () => {
             console.log(`WebSocket server running on ws://localhost:${CONFIG.PORT}/`);
             console.log(`Media directory: ${mediaDir}`);
             console.log(`Thumbnail directory: ${thumbnailDir}`);
+            console.log(`Next.js ${dev ? 'development' : 'production'} server ready`);
         });
     } catch(err) {
         console.log(err);

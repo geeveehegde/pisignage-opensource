@@ -103,7 +103,7 @@ export default function SettingsPage() {
   //   }
   // }, [user, loading, router]);
 
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: unknown) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -133,10 +133,10 @@ export default function SettingsPage() {
         // Revert local state on error
         setSettings(prev => ({ ...prev, [key]: !checked }));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`Error saving ${key}:`, err);
       // Show error toast
-      toast.error(err.response?.data?.message || `Failed to update ${key}`);
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || `Failed to update ${key}`);
       // Revert local state on error
       setSettings(prev => ({ ...prev, [key]: !checked }));
     }
@@ -152,9 +152,9 @@ export default function SettingsPage() {
       } else {
         toast.error(response.message || `Failed to save ${key}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(`Error saving ${key}:`, err);
-      toast.error(err.response?.data?.message || `Failed to save ${key}`);
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || `Failed to save ${key}`);
     }
   };
 
@@ -168,9 +168,9 @@ export default function SettingsPage() {
       } else {
         toast.error(response.message || 'Failed to save authentication credentials');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving auth credentials:', err);
-      toast.error(err.response?.data?.message || 'Failed to save authentication credentials');
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to save authentication credentials');
     }
   };
 

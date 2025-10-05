@@ -1,5 +1,6 @@
 // Asset related types
 export interface Asset {
+  _id?: string;
   name: string;
   type: string;
   duration: number;
@@ -18,6 +19,13 @@ export interface Asset {
   resolution: {
     width: string;
     height: string;
+  };
+  createdAt?: string;
+  details?: {
+    link?: string;
+    zoom?: number;
+    duration?: string | number;
+    hideTitle?: string;
   };
 }
 
@@ -102,7 +110,7 @@ export interface GetAssetsParams {
 }
 
 // API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;

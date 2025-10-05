@@ -113,7 +113,7 @@ export default function TickerConfig({ isOpen, onClose, onSave, initialConfig }:
                         name="type"
                         value={type.value}
                         checked={config.type === type.value}
-                        onChange={(e) => setConfig({ ...config, type: e.target.value as any })}
+                        onChange={(e) => setConfig({ ...config, type: e.target.value as "right" | "left" | "slide" | "scroll-left" | "scroll-right" | "hardware" })}
                         className="border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-gray-700">{type.label}</span>
@@ -149,7 +149,7 @@ export default function TickerConfig({ isOpen, onClose, onSave, initialConfig }:
                         name="speed"
                         value={speed.value}
                         checked={config.speed === speed.value}
-                        onChange={(e) => setConfig({ ...config, speed: e.target.value as any })}
+                        onChange={(e) => setConfig({ ...config, speed: e.target.value as "medium" | "full" | "slow" })}
                         className="border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-gray-700">{speed.label}</span>
@@ -168,7 +168,7 @@ export default function TickerConfig({ isOpen, onClose, onSave, initialConfig }:
                       name="height"
                       value="default"
                       checked={config.height === 'default'}
-                      onChange={(e) => setConfig({ ...config, height: e.target.value as any })}
+                      onChange={(e) => setConfig({ ...config, height: e.target.value as "default" | "large" | "custom" })}
                       className="border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Default(60px)</span>
@@ -179,7 +179,7 @@ export default function TickerConfig({ isOpen, onClose, onSave, initialConfig }:
                       name="height"
                       value="large"
                       checked={config.height === 'large'}
-                      onChange={(e) => setConfig({ ...config, height: e.target.value as any })}
+                      onChange={(e) => setConfig({ ...config, height: e.target.value as "default" | "large" | "custom" })}
                       className="border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="ml-2 text-sm text-gray-700">Large(100px)</span>
@@ -191,7 +191,7 @@ export default function TickerConfig({ isOpen, onClose, onSave, initialConfig }:
                         name="height"
                         value="custom"
                         checked={config.height === 'custom'}
-                        onChange={(e) => setConfig({ ...config, height: e.target.value as any })}
+                        onChange={(e) => setConfig({ ...config, height: e.target.value as "default" | "large" | "custom" })}
                         className="border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-gray-700">custom</span>
